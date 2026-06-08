@@ -184,6 +184,11 @@ body {
   border-color: #5b6ef5;
 }
 
+.field textarea.readonly {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .checkbox-row {
   display: flex;
   gap: 1.5rem;
