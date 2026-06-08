@@ -1,0 +1,16 @@
+{
+  "name": "sound-generator",
+  "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "lint:fix": "pnpm --filter frontend lint:fix",
+    "format": "pnpm --filter frontend format",
+    "format:check": "pnpm --filter frontend format:check",
+    "preview": "pnpm --filter frontend preview"
+  }
+}
