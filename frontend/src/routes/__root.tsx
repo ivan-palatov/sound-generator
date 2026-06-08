@@ -1,11 +1,14 @@
 import { createRootRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { HistoryPanel } from "../components/HistoryPanel.tsx";
+import { LanguageSwitcher } from "../components/LanguageSwitcher.tsx";
 import { ThemeToggle } from "../components/ThemeToggle.tsx";
 import { HistoryProvider } from "../context/HistoryContext.tsx";
 import { ThemeProvider } from "../context/ThemeContext.tsx";
 import "../App.css";
 
 function RootLayout() {
+  const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCover = pathname.startsWith("/cover");
   const isTts = pathname.startsWith("/tts");
@@ -17,24 +20,25 @@ function RootLayout() {
           <header className="app-header">
             <div className="app-header-top">
               <div>
-                <h1>Sound Generator</h1>
-                <p className="subtitle">MiniMax Music & Speech Generation</p>
+                <h1>{t("app.title")}</h1>
+                <p className="subtitle">{t("app.subtitle")}</p>
               </div>
               <div className="app-header-actions">
-                <nav className="mode-tabs" aria-label="Generation mode">
+                <nav className="mode-tabs" aria-label={t("nav.generationMode")}>
                   <Link
                     to="/"
                     className={`mode-tab ${!isCover && !isTts ? "active" : ""}`}
                   >
-                    New Song
+                    {t("nav.newSong")}
                   </Link>
                   <Link to="/cover" className={`mode-tab ${isCover ? "active" : ""}`}>
-                    New Cover
+                    {t("nav.newCover")}
                   </Link>
                   <Link to="/tts" className={`mode-tab ${isTts ? "active" : ""}`}>
-                    Text to Speech
+                    {t("nav.textToSpeech")}
                   </Link>
                 </nav>
+                <LanguageSwitcher />
                 <ThemeToggle />
               </div>
             </div>

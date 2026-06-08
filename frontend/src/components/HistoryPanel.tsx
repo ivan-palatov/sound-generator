@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { deleteHistoryEntry, updateHistoryEntry } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import { entryToCoverPrefill } from "../lib/cover.ts";
@@ -7,20 +8,17 @@ import { entryToPrefill, isCoverEntry } from "../lib/generation.ts";
 import { entryToTtsPrefill, isTtsEntry } from "../lib/tts.ts";
 import type { HistoryEntry } from "../types.ts";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString();
-}
-
 function truncate(text: string, max = 60): string {
   if (text.length <= max) return text;
   return `${text.slice(0, max)}…`;
 }
 
-function displayTitle(entry: HistoryEntry): string {
-  return entry.title ?? truncate(entry.prompt || "(no prompt)");
+function displayTitle(entry: HistoryEntry, noPrompt: string): string {
+  return entry.title ?? truncate(entry.prompt || noPrompt);
 }
 
 export function HistoryPanel() {
+  const { t, i18n } = useTranslation();
   const { entries, refreshHistory } = useHistory();
   const navigate = useNavigate();
   const params = useParams({ strict: false });
@@ -29,6 +27,9 @@ export function HistoryPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
+
+  const formatDate = (iso: string) => new Date(iso).toLocaleString(i18n.language);
+  const noPrompt = t("history.noPrompt");
 
   const handleDuplicate = (entry: HistoryEntry, e: React.MouseEvent) => {
     e.preventDefault();
@@ -77,7 +78,7 @@ export function HistoryPanel() {
     e.preventDefault();
     e.stopPropagation();
     setEditingId(entry.id);
-    setEditValue(displayTitle(entry));
+    setEditValue(displayTitle(entry, noPrompt));
     requestAnimationFrame(() => editInputRef.current?.select());
   };
 
@@ -88,7 +89,7 @@ export function HistoryPanel() {
 
   const saveRename = async (entry: HistoryEntry) => {
     const trimmed = editValue.trim();
-    if (!trimmed || trimmed === displayTitle(entry)) {
+    if (!trimmed || trimmed === displayTitle(entry, noPrompt)) {
       cancelRename();
       return;
     }
@@ -115,21 +116,21 @@ export function HistoryPanel() {
   return (
     <aside className="history-panel">
       <div className="history-panel-header">
-        <h2>History</h2>
+        <h2>{t("history.title")}</h2>
         <div className="history-new-actions">
           <Link to="/" className="history-new-btn" state={{}}>
-            + Song
+            {t("history.newSong")}
           </Link>
           <Link to="/cover" className="history-new-btn" state={{}}>
-            + Cover
+            {t("history.newCover")}
           </Link>
           <Link to="/tts" className="history-new-btn" state={{}}>
-            + TTS
+            {t("history.newTts")}
           </Link>
         </div>
       </div>
       {entries.length === 0 ? (
-        <p className="history-empty">No generations yet</p>
+        <p className="history-empty">{t("history.empty")}</p>
       ) : (
         <ul className="history-list">
           {entries.map((entry: HistoryEntry) => (
@@ -154,7 +155,7 @@ export function HistoryPanel() {
                     onKeyDown={(e) => handleRenameKeyDown(entry, e)}
                     onClick={(e) => e.preventDefault()}
                     maxLength={200}
-                    aria-label="Rename song"
+                    aria-label={t("history.renameSong")}
                   />
                 ) : (
                   <span className="history-title">
@@ -168,7 +169,7 @@ export function HistoryPanel() {
                         <path d="M9.5 1.5 8 3l-1.5-1.5a1 1 0 0 0-1.4 0l-.1.1a1 1 0 0 0 0 1.4L6 4.2V8l-2.3 2.3a1 1 0 0 0 0 1.4l.1.1a1 1 0 0 0 1.4 0L8 10.8l2.8 2.8a1 1 0 0 0 1.4 0l.1-.1a1 1 0 0 0 0-1.4L10 8V4.2l1-1a1 1 0 0 0 0-1.4l-.1-.1a1 1 0 0 0-1.4 0Z" />
                       </svg>
                     )}
-                    {displayTitle(entry)}
+                    {displayTitle(entry, noPrompt)}
                   </span>
                 )}
                 {entry.styleTags && entry.styleTags.length > 0 && (
@@ -181,15 +182,17 @@ export function HistoryPanel() {
                   </div>
                 )}
                 <span className="history-date">{formatDate(entry.createdAt)}</span>
-                {entry.status === "failed" && <span className="history-failed">Failed</span>}
+                {entry.status === "failed" && (
+                  <span className="history-failed">{t("history.failed")}</span>
+                )}
               </Link>
               <div className="history-item-actions">
                 <button
                   type="button"
                   className={`history-action-btn history-action-pin ${entry.pinned ? "active" : ""}`}
                   onClick={(e) => void handlePin(entry, e)}
-                  title={entry.pinned ? "Unpin from favorites" : "Pin to favorites"}
-                  aria-label={entry.pinned ? "Unpin from favorites" : "Pin to favorites"}
+                  title={entry.pinned ? t("history.unpin") : t("history.pin")}
+                  aria-label={entry.pinned ? t("history.unpin") : t("history.pin")}
                   aria-pressed={entry.pinned ?? false}
                 >
                   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -212,8 +215,8 @@ export function HistoryPanel() {
                   type="button"
                   className="history-action-btn history-action-rename"
                   onClick={(e) => startRename(entry, e)}
-                  title="Rename"
-                  aria-label="Rename"
+                  title={t("history.rename")}
+                  aria-label={t("history.rename")}
                 >
                   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path
@@ -234,8 +237,8 @@ export function HistoryPanel() {
                   type="button"
                   className="history-action-btn history-action-duplicate"
                   onClick={(e) => handleDuplicate(entry, e)}
-                  title="Duplicate settings"
-                  aria-label="Duplicate settings"
+                  title={t("history.duplicate")}
+                  aria-label={t("history.duplicate")}
                 >
                   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <rect
@@ -259,8 +262,8 @@ export function HistoryPanel() {
                   type="button"
                   className="history-action-btn history-action-delete"
                   onClick={(e) => void handleDelete(entry.id, e)}
-                  title="Delete"
-                  aria-label="Delete"
+                  title={t("history.delete")}
+                  aria-label={t("history.delete")}
                 >
                   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path

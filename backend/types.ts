@@ -65,6 +65,8 @@ export interface HistoryEntry {
   pinned?: boolean;
   status: HistoryStatus;
   error?: string;
+  errorCode?: string;
+  errorParams?: Record<string, string | number>;
   traceId?: string;
   durationMs?: number;
   voiceId?: string;

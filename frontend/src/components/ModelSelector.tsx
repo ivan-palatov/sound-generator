@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { SONG_MODELS, type MusicModel } from "../types.ts";
 
 interface ModelSelectorProps {
@@ -7,9 +8,11 @@ interface ModelSelectorProps {
 }
 
 export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps) {
+  const { t } = useTranslation();
+
   return (
     <label className="field">
-      <span className="field-label">Model</span>
+      <span className="field-label">{t("common.model")}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as MusicModel)}
@@ -17,7 +20,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
       >
         {SONG_MODELS.map((m) => (
           <option key={m.value} value={m.value}>
-            {m.label}
+            {t(`models.${m.value}`)}
           </option>
         ))}
       </select>

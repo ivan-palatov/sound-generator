@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { generateTts, updateHistoryEntry } from "../api/client.ts";
+import { useTranslation } from "react-i18next";
+import { generateTts, isApiClientError, translateError, updateHistoryEntry } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import {
   defaultTtsForm,
@@ -8,6 +9,7 @@ import {
   type TtsFormState,
   type TtsPrefill,
 } from "../lib/tts.ts";
+import { translateEntryError } from "../lib/translateError.ts";
 import type { HistoryEntry, TtsModel } from "../types.ts";
 import { TTS_MODEL_OPTIONS } from "../types.ts";
 import { GenerationResult } from "./GenerationResult.tsx";
@@ -21,6 +23,7 @@ interface TtsPageProps {
 }
 
 export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPageProps) {
+  const { t } = useTranslation();
   const { refreshHistory } = useHistory();
   const [model, setModel] = useState<TtsModel>(
     initialEntry?.model === "speech-2.8-turbo" ? "speech-2.8-turbo" : "speech-2.8-hd",
@@ -31,7 +34,9 @@ export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPagePro
   const [current, setCurrent] = useState<HistoryEntry | null>(initialEntry ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    initialEntry?.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+    initialEntry?.status === "failed"
+      ? (translateEntryError(initialEntry) ?? t("result.generationFailed"))
+      : null,
   );
 
   useEffect(() => {
@@ -53,10 +58,12 @@ export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPagePro
       setForm(entryToTtsForm(initialEntry));
       setCurrent(initialEntry);
       setError(
-        initialEntry.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+        initialEntry.status === "failed"
+          ? (translateEntryError(initialEntry) ?? t("result.generationFailed"))
+          : null,
       );
     }
-  }, [mode, initialEntry, prefill]);
+  }, [mode, initialEntry, prefill, t]);
 
   const handleTitleChange = async (title: string) => {
     if (!current) return;
@@ -73,11 +80,15 @@ export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPagePro
       const { entry, error: genError } = await generateTts(ttsFormToRequest(model, form));
       setCurrent(entry);
       if (genError) {
-        setError(genError);
+        setError(translateError(genError.code, genError.params, t("errors.TTS_GENERATION_FAILED")));
       }
       await onGenerated?.(entry);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "TTS generation failed");
+      if (isApiClientError(err)) {
+        setError(translateError(err.code, err.params, t("errors.TTS_GENERATION_FAILED")));
+      } else {
+        setError(t("errors.TTS_GENERATION_FAILED"));
+      }
     } finally {
       setLoading(false);
     }
@@ -86,7 +97,7 @@ export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPagePro
   return (
     <main className="main-panel">
       <label className="field">
-        <span className="field-label">Model</span>
+        <span className="field-label">{t("common.model")}</span>
         <select
           value={model}
           onChange={(e) => setModel(e.target.value as TtsModel)}
@@ -94,7 +105,7 @@ export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPagePro
         >
           {TTS_MODEL_OPTIONS.map((m) => (
             <option key={m.value} value={m.value}>
-              {m.label}
+              {t(`models.${m.value}`)}
             </option>
           ))}
         </select>
@@ -107,8 +118,8 @@ export function TtsPage({ mode, initialEntry, prefill, onGenerated }: TtsPagePro
         loading={loading}
         error={error}
         onTitleChange={mode === "entry" && current ? handleTitleChange : undefined}
-        emptyMessage="Generate speech to hear the result here."
-        loadingMessage="Generating speech — this may take a minute…"
+        emptyMessage={t("result.emptyTts")}
+        loadingMessage={t("result.loadingTts")}
       />
     </main>
   );

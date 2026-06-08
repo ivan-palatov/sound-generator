@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { generateMusic, updateHistoryEntry } from "../api/client.ts";
+import { useTranslation } from "react-i18next";
+import { generateMusic, isApiClientError, translateError, updateHistoryEntry } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import { defaultForm, entryToForm, type GenerationPrefill } from "../lib/generation.ts";
+import { translateEntryError } from "../lib/translateError.ts";
 import type { GenerateRequest, HistoryEntry, MusicModel } from "../types.ts";
 import { GenerationResult } from "./GenerationResult.tsx";
 import { ModelSelector } from "./ModelSelector.tsx";
@@ -15,6 +17,7 @@ interface GenerationPageProps {
 }
 
 export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: GenerationPageProps) {
+  const { t } = useTranslation();
   const { refreshHistory } = useHistory();
   const [model, setModel] = useState<MusicModel>(initialEntry?.model ?? "music-2.6");
   const [form, setForm] = useState<Omit<GenerateRequest, "model">>(
@@ -23,7 +26,9 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
   const [current, setCurrent] = useState<HistoryEntry | null>(initialEntry ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    initialEntry?.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+    initialEntry?.status === "failed"
+      ? (translateEntryError(initialEntry) ?? t("result.generationFailed"))
+      : null,
   );
 
   useEffect(() => {
@@ -45,10 +50,12 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
       setForm(entryToForm(initialEntry));
       setCurrent(initialEntry);
       setError(
-        initialEntry.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+        initialEntry.status === "failed"
+          ? (translateEntryError(initialEntry) ?? t("result.generationFailed"))
+          : null,
       );
     }
-  }, [mode, initialEntry, prefill]);
+  }, [mode, initialEntry, prefill, t]);
 
   const handleTitleChange = async (title: string) => {
     if (!current) return;
@@ -65,11 +72,15 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
       const { entry, error: genError } = await generateMusic({ model, ...form });
       setCurrent(entry);
       if (genError) {
-        setError(genError);
+        setError(translateError(genError.code, genError.params, t("result.generationFailed")));
       }
       await onGenerated?.(entry);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generation failed");
+      if (isApiClientError(err)) {
+        setError(translateError(err.code, err.params, t("result.generationFailed")));
+      } else {
+        setError(t("result.generationFailed"));
+      }
     } finally {
       setLoading(false);
     }

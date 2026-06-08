@@ -1,3 +1,4 @@
+import { ApiError } from "./errors.ts";
 import type { TtsGenerateRequest, TtsModel } from "./types.ts";
 import { TTS_MODELS } from "./types.ts";
 
@@ -12,7 +13,7 @@ function parseTtsModel(value: string | null): TtsModel | null {
 
 async function fileToBase64(file: File): Promise<string> {
   if (file.size > MAX_AUDIO_BYTES) {
-    throw new Error("Voice sample must be at most 20 MB");
+    throw new ApiError("VOICE_SAMPLE_TOO_LARGE", { maxMB: 20 });
   }
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
@@ -29,7 +30,7 @@ export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerate
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     const model = parseTtsModel(form.get("model")?.toString() ?? null);
-    if (!model) throw new Error("Valid TTS model is required");
+    if (!model) throw new ApiError("VALID_TTS_MODEL_REQUIRED");
 
     const text = form.get("text")?.toString() ?? "";
     const audioUrl = form.get("audioUrl")?.toString().trim();

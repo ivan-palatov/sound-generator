@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import type { TtsFormState } from "../lib/tts.ts";
 
 const MAX_TEXT_LENGTH = 1000;
@@ -9,22 +11,23 @@ interface TtsFormProps {
   loading: boolean;
 }
 
-function validate(values: TtsFormState): string | null {
+function validate(values: TtsFormState, t: TFunction): string | null {
   const text = values.text.trim();
-  if (!text) return "Speech text is required";
+  if (!text) return t("tts.validation.textRequired");
   if (text.length > MAX_TEXT_LENGTH) {
-    return `Speech text must be at most ${MAX_TEXT_LENGTH} characters`;
+    return t("tts.validation.textMax", { max: MAX_TEXT_LENGTH });
   }
 
   if (!values.audioFile && !values.audioUrl.trim()) {
-    return "Voice sample file or URL is required";
+    return t("tts.validation.voiceRequired");
   }
 
   return null;
 }
 
 export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
-  const validationError = validate(values);
+  const { t } = useTranslation();
+  const validationError = validate(values, t);
   const textLength = values.text.length;
 
   const update = (patch: Partial<TtsFormState>) => {
@@ -47,22 +50,22 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
       }}
     >
       <label className="field">
-        <span className="field-label">Speech text</span>
+        <span className="field-label">{t("tts.speechText")}</span>
         <textarea
           value={values.text}
           onChange={(e) => update({ text: e.target.value })}
-          placeholder="Enter the text you want spoken in the cloned voice…"
+          placeholder={t("tts.speechTextPlaceholder")}
           rows={8}
           disabled={loading}
           maxLength={MAX_TEXT_LENGTH}
         />
         <p className="field-hint">
-          {textLength}/{MAX_TEXT_LENGTH} characters. Up to 1000 characters per generation.
+          {t("tts.charCount", { count: textLength, max: MAX_TEXT_LENGTH })}
         </p>
       </label>
 
       <label className="field">
-        <span className="field-label">Voice sample</span>
+        <span className="field-label">{t("tts.voiceSample")}</span>
         <input
           type="file"
           accept="audio/*,.mp3,.wav,.m4a"
@@ -73,17 +76,15 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
         {values.audioFile && (
           <p className="field-hint file-name">{values.audioFile.name}</p>
         )}
-        <span className="field-divider">or</span>
+        <span className="field-divider">{t("common.or")}</span>
         <input
           type="url"
           value={values.audioUrl}
           onChange={(e) => update({ audioUrl: e.target.value, audioFile: null })}
-          placeholder="https://example.com/voice-sample.mp3"
+          placeholder={t("tts.voiceSamplePlaceholder")}
           disabled={loading || Boolean(values.audioFile)}
         />
-        <p className="field-hint">
-          10 seconds to 5 minutes, max 20 MB. MP3, M4A, or WAV.
-        </p>
+        <p className="field-hint">{t("tts.voiceSampleHint")}</p>
       </label>
 
       {validationError && <p className="validation-error">{validationError}</p>}
@@ -93,7 +94,7 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
         className="generate-btn"
         disabled={loading || !!validationError}
       >
-        {loading ? "Generating speech…" : "Generate speech"}
+        {loading ? t("tts.generatingSpeech") : t("tts.generateSpeech")}
       </button>
     </form>
   );

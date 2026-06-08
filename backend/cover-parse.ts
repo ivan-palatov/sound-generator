@@ -1,3 +1,4 @@
+import { ApiError } from "./errors.ts";
 import type { CoverGenerateRequest, CoverModel, CoverPreprocessRequest } from "./types.ts";
 import { COVER_MODELS } from "./types.ts";
 
@@ -12,7 +13,7 @@ function parseCoverModel(value: string | null): CoverModel | null {
 
 async function fileToBase64(file: File): Promise<string> {
   if (file.size > MAX_AUDIO_BYTES) {
-    throw new Error("Reference audio must be at most 50 MB");
+    throw new ApiError("REFERENCE_AUDIO_TOO_LARGE", { maxMB: 50 });
   }
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
@@ -31,7 +32,7 @@ export async function parseCoverPreprocessRequest(
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     const model = parseCoverModel(form.get("model")?.toString() ?? null);
-    if (!model) throw new Error("Valid cover model is required");
+    if (!model) throw new ApiError("VALID_COVER_MODEL_REQUIRED");
 
     const audioUrl = form.get("audioUrl")?.toString().trim();
     const audioFile = form.get("audio");
@@ -58,7 +59,7 @@ export async function parseCoverGenerateRequest(
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     const model = parseCoverModel(form.get("model")?.toString() ?? null);
-    if (!model) throw new Error("Valid cover model is required");
+    if (!model) throw new ApiError("VALID_COVER_MODEL_REQUIRED");
 
     const prompt = form.get("prompt")?.toString() ?? "";
     const coverFeatureId = form.get("coverFeatureId")?.toString().trim();

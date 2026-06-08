@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { fetchHistoryEntry } from "../api/client.ts";
 import { CoverPage } from "../components/CoverPage.tsx";
 import { GenerationPage } from "../components/GenerationPage.tsx";
@@ -9,6 +10,7 @@ import { isTtsEntry } from "../lib/tts.ts";
 import type { HistoryEntry } from "../types.ts";
 
 function HistoryEntryPage() {
+  const { t } = useTranslation();
   const entry = Route.useLoaderData();
   const navigate = useNavigate();
   const { refreshHistory } = useHistory();
@@ -17,9 +19,9 @@ function HistoryEntryPage() {
     return (
       <main className="main-panel">
         <div className="generation-result error">
-          <p>Entry not found</p>
+          <p>{t("result.entryNotFound")}</p>
           <Link to="/" className="not-found-link">
-            Create a new generation
+            {t("result.createNew")}
           </Link>
         </div>
       </main>

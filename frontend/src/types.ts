@@ -61,26 +61,28 @@ export interface HistoryEntry {
   pinned?: boolean;
   status: HistoryStatus;
   error?: string;
+  errorCode?: string;
+  errorParams?: Record<string, string | number>;
   traceId?: string;
   durationMs?: number;
   voiceId?: string;
 }
 
-export const SONG_MODELS: { value: MusicModel; label: string }[] = [
-  { value: "music-2.6", label: "Music 2.6 (Token Plan)" },
-  { value: "music-2.6-free", label: "Music 2.6 Free" },
+export const SONG_MODELS: { value: MusicModel }[] = [
+  { value: "music-2.6" },
+  { value: "music-2.6-free" },
 ];
 
-export const COVER_MODEL_OPTIONS: { value: CoverModel; label: string }[] = [
-  { value: "music-cover", label: "Music Cover (Token Plan)" },
-  { value: "music-cover-free", label: "Music Cover Free" },
+export const COVER_MODEL_OPTIONS: { value: CoverModel }[] = [
+  { value: "music-cover" },
+  { value: "music-cover-free" },
 ];
 
 export const COVER_MODELS = new Set<MusicModel>(["music-cover", "music-cover-free"]);
 
-export const TTS_MODEL_OPTIONS: { value: TtsModel; label: string }[] = [
-  { value: "speech-2.8-hd", label: "Speech 2.8 HD" },
-  { value: "speech-2.8-turbo", label: "Speech 2.8 Turbo" },
+export const TTS_MODEL_OPTIONS: { value: TtsModel }[] = [
+  { value: "speech-2.8-hd" },
+  { value: "speech-2.8-turbo" },
 ];
 
 export const TTS_MODELS = new Set<TtsModel>(["speech-2.8-hd", "speech-2.8-turbo"]);

@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { generateCover, preprocessCover, updateHistoryEntry } from "../api/client.ts";
+import { useTranslation } from "react-i18next";
+import {
+  generateCover,
+  isApiClientError,
+  preprocessCover,
+  translateError,
+  updateHistoryEntry,
+} from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import {
   coverFormToRequest,
@@ -8,6 +15,7 @@ import {
   type CoverFormState,
   type CoverPrefill,
 } from "../lib/cover.ts";
+import { translateEntryError } from "../lib/translateError.ts";
 import type { CoverModel, HistoryEntry } from "../types.ts";
 import { COVER_MODEL_OPTIONS } from "../types.ts";
 import { CoverForm } from "./CoverForm.tsx";
@@ -21,6 +29,7 @@ interface CoverPageProps {
 }
 
 export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPageProps) {
+  const { t } = useTranslation();
   const { refreshHistory } = useHistory();
   const [model, setModel] = useState<CoverModel>(
     initialEntry?.model === "music-cover-free" ? "music-cover-free" : "music-cover",
@@ -32,7 +41,9 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
   const [loading, setLoading] = useState(false);
   const [preprocessing, setPreprocessing] = useState(false);
   const [error, setError] = useState<string | null>(
-    initialEntry?.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+    initialEntry?.status === "failed"
+      ? (translateEntryError(initialEntry) ?? t("result.generationFailed"))
+      : null,
   );
 
   useEffect(() => {
@@ -54,10 +65,12 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
       setForm(entryToCoverForm(initialEntry));
       setCurrent(initialEntry);
       setError(
-        initialEntry.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+        initialEntry.status === "failed"
+          ? (translateEntryError(initialEntry) ?? t("result.generationFailed"))
+          : null,
       );
     }
-  }, [mode, initialEntry, prefill]);
+  }, [mode, initialEntry, prefill, t]);
 
   const handleTitleChange = async (title: string) => {
     if (!current) return;
@@ -82,7 +95,11 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
         lyrics: result.formattedLyrics,
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to extract lyrics");
+      if (isApiClientError(err)) {
+        setError(translateError(err.code, err.params, t("errors.EXTRACT_LYRICS_FAILED")));
+      } else {
+        setError(t("errors.EXTRACT_LYRICS_FAILED"));
+      }
     } finally {
       setPreprocessing(false);
     }
@@ -115,11 +132,17 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
       );
       setCurrent(entry);
       if (genError) {
-        setError(genError);
+        setError(
+          translateError(genError.code, genError.params, t("errors.COVER_GENERATION_FAILED")),
+        );
       }
       await onGenerated?.(entry);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Cover generation failed");
+      if (isApiClientError(err)) {
+        setError(translateError(err.code, err.params, t("errors.COVER_GENERATION_FAILED")));
+      } else {
+        setError(t("errors.COVER_GENERATION_FAILED"));
+      }
     } finally {
       setLoading(false);
     }
@@ -128,7 +151,7 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
   return (
     <main className="main-panel">
       <label className="field">
-        <span className="field-label">Model</span>
+        <span className="field-label">{t("common.model")}</span>
         <select
           value={model}
           onChange={(e) => setModel(e.target.value as CoverModel)}
@@ -136,7 +159,7 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
         >
           {COVER_MODEL_OPTIONS.map((m) => (
             <option key={m.value} value={m.value}>
-              {m.label}
+              {t(`models.${m.value}`)}
             </option>
           ))}
         </select>
@@ -156,7 +179,7 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
         loading={loading}
         error={error}
         onTitleChange={mode === "entry" && current ? handleTitleChange : undefined}
-        emptyMessage="Generate a cover to hear the result here."
+        emptyMessage={t("result.emptyCover")}
       />
     </main>
   );

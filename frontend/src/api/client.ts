@@ -6,6 +6,21 @@ import type {
   HistoryEntry,
   TtsGenerateRequest,
 } from "../types.ts";
+import {
+  ApiClientError,
+  type ApiErrorParams,
+} from "../lib/translateError.ts";
+
+interface ApiErrorBody {
+  errorCode?: string;
+  errorParams?: ApiErrorParams;
+  error?: string;
+}
+
+function parseApiError(data: ApiErrorBody, fallbackCode: string): ApiClientError {
+  const code = data.errorCode ?? fallbackCode;
+  return new ApiClientError(code, data.errorParams);
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -16,7 +31,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error ?? "Request failed");
+    throw parseApiError(data as ApiErrorBody, "REQUEST_FAILED");
   }
 
   return data as T;
@@ -38,6 +53,23 @@ function buildCoverFormData(
   return formData;
 }
 
+export interface GenerationError {
+  code: string;
+  params?: ApiErrorParams;
+}
+
+function parseGenerationResponse(
+  data: ApiErrorBody & { entry?: HistoryEntry },
+): { entry: HistoryEntry; error?: GenerationError } {
+  if (data.errorCode) {
+    return {
+      entry: data.entry!,
+      error: { code: data.errorCode, params: data.errorParams },
+    };
+  }
+  return { entry: data.entry! };
+}
+
 export async function fetchHistory(): Promise<HistoryEntry[]> {
   const data = await request<{ entries: HistoryEntry[] }>("/api/history");
   return data.entries;
@@ -50,7 +82,7 @@ export async function fetchHistoryEntry(id: string): Promise<HistoryEntry> {
 
 export async function generateMusic(
   body: GenerateRequest,
-): Promise<{ entry: HistoryEntry; error?: string }> {
+): Promise<{ entry: HistoryEntry; error?: GenerationError }> {
   const response = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -60,11 +92,11 @@ export async function generateMusic(
   const data = await response.json();
 
   if (response.status === 422) {
-    return { entry: data.entry, error: data.error };
+    return parseGenerationResponse(data);
   }
 
   if (!response.ok) {
-    throw new Error(data.error ?? "Generation failed");
+    throw parseApiError(data as ApiErrorBody, "GENERATION_FAILED");
   }
 
   return { entry: data.entry };
@@ -97,7 +129,7 @@ export async function preprocessCover(input: {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error ?? "Preprocess failed");
+    throw parseApiError(data as ApiErrorBody, "PREPROCESS_FAILED");
   }
 
   return data as CoverPreprocessResponse;
@@ -105,7 +137,7 @@ export async function preprocessCover(input: {
 
 export async function generateCover(
   body: CoverGenerateRequest,
-): Promise<{ entry: HistoryEntry; error?: string }> {
+): Promise<{ entry: HistoryEntry; error?: GenerationError }> {
   const hasFile = Boolean(body.audioFile);
 
   const response = await fetch(
@@ -140,11 +172,11 @@ export async function generateCover(
   const data = await response.json();
 
   if (response.status === 422) {
-    return { entry: data.entry, error: data.error };
+    return parseGenerationResponse(data);
   }
 
   if (!response.ok) {
-    throw new Error(data.error ?? "Cover generation failed");
+    throw parseApiError(data as ApiErrorBody, "COVER_GENERATION_FAILED");
   }
 
   return { entry: data.entry };
@@ -152,7 +184,7 @@ export async function generateCover(
 
 export async function generateTts(
   body: TtsGenerateRequest,
-): Promise<{ entry: HistoryEntry; error?: string }> {
+): Promise<{ entry: HistoryEntry; error?: GenerationError }> {
   const hasFile = Boolean(body.audioFile);
 
   const response = await fetch(
@@ -183,11 +215,11 @@ export async function generateTts(
   const data = await response.json();
 
   if (response.status === 422) {
-    return { entry: data.entry, error: data.error };
+    return parseGenerationResponse(data);
   }
 
   if (!response.ok) {
-    throw new Error(data.error ?? "TTS generation failed");
+    throw parseApiError(data as ApiErrorBody, "TTS_GENERATION_FAILED");
   }
 
   return { entry: data.entry };
@@ -207,3 +239,5 @@ export async function updateHistoryEntry(
   });
   return data.entry;
 }
+
+export { translateError, ApiClientError, isApiClientError } from "../lib/translateError.ts";

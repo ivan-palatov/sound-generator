@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import type { GenerateRequest } from "../types.ts";
 
 interface PromptFormProps {
@@ -7,18 +9,19 @@ interface PromptFormProps {
   loading: boolean;
 }
 
-function validate(values: Omit<GenerateRequest, "model">): string | null {
+function validate(values: Omit<GenerateRequest, "model">, t: TFunction): string | null {
   if (values.isInstrumental) {
-    if (!values.prompt.trim()) return "Style prompt is required for instrumental";
+    if (!values.prompt.trim()) return t("song.validation.styleRequired");
   } else if (!values.lyricsOptimizer && !values.lyrics?.trim()) {
-    return "Lyrics are required unless auto-generate is enabled";
+    return t("song.validation.lyricsRequired");
   }
 
   return null;
 }
 
 export function PromptForm({ values, onChange, onSubmit, loading }: PromptFormProps) {
-  const validationError = validate(values);
+  const { t } = useTranslation();
+  const validationError = validate(values, t);
 
   const update = (patch: Partial<Omit<GenerateRequest, "model">>) => {
     onChange({ ...values, ...patch });
@@ -54,25 +57,25 @@ export function PromptForm({ values, onChange, onSubmit, loading }: PromptFormPr
       }}
     >
       <label className="field">
-        <span className="field-label">Style prompt</span>
+        <span className="field-label">{t("song.stylePrompt")}</span>
         <textarea
           value={values.prompt}
           onChange={(e) => update({ prompt: e.target.value })}
-          placeholder="Pop, melancholic, perfect for a rainy night"
+          placeholder={t("song.stylePromptPlaceholder")}
           rows={3}
         />
       </label>
 
       {!values.isInstrumental && (
         <label className="field">
-          <span className="field-label">Lyrics</span>
+          <span className="field-label">{t("song.lyrics")}</span>
           <textarea
             value={values.lyricsOptimizer ? "" : (values.lyrics ?? "")}
             onChange={(e) => setLyrics(e.target.value)}
             placeholder={
               values.lyricsOptimizer
-                ? "Lyrics will be generated from your style prompt"
-                : "[Verse]\nYour lyrics here..."
+                ? t("song.lyricsAutoPlaceholder")
+                : t("song.lyricsPlaceholder")
             }
             rows={8}
             readOnly={values.lyricsOptimizer}
@@ -88,7 +91,7 @@ export function PromptForm({ values, onChange, onSubmit, loading }: PromptFormPr
             checked={values.isInstrumental}
             onChange={(e) => setInstrumental(e.target.checked)}
           />
-          Instrumental
+          {t("song.instrumental")}
         </label>
         <label className="checkbox">
           <input
@@ -97,14 +100,14 @@ export function PromptForm({ values, onChange, onSubmit, loading }: PromptFormPr
             onChange={(e) => setLyricsOptimizer(e.target.checked)}
             disabled={values.isInstrumental}
           />
-          Auto-generate lyrics
+          {t("song.autoLyrics")}
         </label>
       </div>
 
       {validationError && <p className="validation-error">{validationError}</p>}
 
       <button type="submit" className="generate-btn" disabled={loading || !!validationError}>
-        {loading ? "Generating…" : "Generate"}
+        {loading ? t("common.generating") : t("common.generate")}
       </button>
     </form>
   );

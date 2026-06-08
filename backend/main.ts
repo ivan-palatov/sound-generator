@@ -4,6 +4,7 @@ import {
   referenceAudioLabel,
 } from "./cover-parse.ts";
 import { parseTtsGenerateRequest, referenceAudioLabel as ttsReferenceAudioLabel } from "./tts-parse.ts";
+import { apiErrorResponse, ApiError, isApiError } from "./errors.ts";
 import {
   appendHistory,
   deleteHistory,
@@ -51,20 +52,65 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+function errorStatus(err: ApiError): number {
+  const clientErrors: Set<string> = new Set([
+    "INVALID_JSON",
+    "INVALID_REQUEST_BODY",
+    "COVER_MODEL_WRONG_ENDPOINT",
+    "TTS_MODEL_WRONG_ENDPOINT",
+    "MODEL_REQUIRED",
+    "UNSUPPORTED_MODEL",
+    "UNSUPPORTED_COVER_MODEL",
+    "UNSUPPORTED_TTS_MODEL",
+    "VALID_COVER_MODEL_REQUIRED",
+    "VALID_TTS_MODEL_REQUIRED",
+    "STYLE_PROMPT_REQUIRED_INSTRUMENTAL",
+    "STYLE_PROMPT_TOO_LONG",
+    "LYRICS_REQUIRED",
+    "LYRICS_TOO_LONG",
+    "REFERENCE_AUDIO_REQUIRED",
+    "REFERENCE_AUDIO_BOTH",
+    "REFERENCE_AUDIO_TOO_LARGE",
+    "STYLE_PROMPT_LENGTH",
+    "COVER_FEATURE_WITH_AUDIO",
+    "COVER_LYRICS_LENGTH",
+    "SPEECH_TEXT_REQUIRED",
+    "SPEECH_TEXT_TOO_LONG",
+    "VOICE_SAMPLE_REQUIRED",
+    "VOICE_SAMPLE_BOTH",
+    "VOICE_SAMPLE_TOO_LARGE",
+    "UNKNOWN_FIELDS",
+    "TITLE_NOT_STRING",
+    "TITLE_EMPTY",
+    "TITLE_TOO_LONG",
+    "PINNED_NOT_BOOLEAN",
+    "NO_VALID_FIELDS",
+  ]);
+
+  if (clientErrors.has(err.code)) return 400;
+  return 422;
+}
+
+function applyErrorToEntry(entry: HistoryEntry, err: ApiError): void {
+  entry.errorCode = err.code;
+  if (err.params) entry.errorParams = err.params;
+  entry.traceId = err.traceId;
+}
+
 async function handleGenerate(req: Request): Promise<Response> {
   let body: GenerateRequest;
   try {
     body = (await req.json()) as GenerateRequest;
   } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400);
+    return jsonResponse({ errorCode: "INVALID_JSON" }, 400);
   }
 
   if (COVER_MODELS.has(body.model)) {
-    return jsonResponse({ error: "Cover models must use /api/cover/generate" }, 400);
+    return jsonResponse({ errorCode: "COVER_MODEL_WRONG_ENDPOINT" }, 400);
   }
 
   if (TTS_MODELS.has(body.model as TtsModel)) {
-    return jsonResponse({ error: "TTS models must use /api/tts/generate" }, 400);
+    return jsonResponse({ errorCode: "TTS_MODEL_WRONG_ENDPOINT" }, 400);
   }
 
   const entry: HistoryEntry = {
@@ -94,11 +140,12 @@ async function handleGenerate(req: Request): Promise<Response> {
       entry.styleTags = fallbackStyleTags(body.prompt ?? "");
     }
   } catch (err) {
-    const error = err as Error & { traceId?: string };
-    entry.error = error.message;
-    entry.traceId = error.traceId;
-    await appendHistory(entry);
-    return jsonResponse({ entry, error: error.message }, 422);
+    if (isApiError(err)) {
+      applyErrorToEntry(entry, err);
+      await appendHistory(entry);
+      return jsonResponse(apiErrorResponse(err, { entry }), 422);
+    }
+    throw err;
   }
 
   await appendHistory(entry);
@@ -111,11 +158,10 @@ async function handleCoverPreprocess(req: Request): Promise<Response> {
     const result = await preprocessCover(body);
     return jsonResponse(result);
   } catch (err) {
-    const error = err as Error & { traceId?: string };
-    return jsonResponse(
-      { error: error.message, traceId: error.traceId },
-      error.message.includes("required") || error.message.includes("Provide") ? 400 : 422,
-    );
+    if (isApiError(err)) {
+      return jsonResponse(apiErrorResponse(err), errorStatus(err));
+    }
+    throw err;
   }
 }
 
@@ -138,10 +184,10 @@ async function handleCoverGenerate(req: Request): Promise<Response> {
   try {
     body = await parseCoverGenerateRequest(req);
   } catch (err) {
-    return jsonResponse(
-      { error: err instanceof Error ? err.message : "Invalid request body" },
-      400,
-    );
+    if (isApiError(err)) {
+      return jsonResponse(apiErrorResponse(err), errorStatus(err));
+    }
+    return jsonResponse({ errorCode: "INVALID_REQUEST_BODY" }, 400);
   }
 
   const entry = coverEntryFromRequest(body);
@@ -168,11 +214,12 @@ async function handleCoverGenerate(req: Request): Promise<Response> {
       entry.styleTags = fallbackStyleTags(body.prompt ?? "");
     }
   } catch (err) {
-    const error = err as Error & { traceId?: string };
-    entry.error = error.message;
-    entry.traceId = error.traceId;
-    await appendHistory(entry);
-    return jsonResponse({ entry, error: error.message }, 422);
+    if (isApiError(err)) {
+      applyErrorToEntry(entry, err);
+      await appendHistory(entry);
+      return jsonResponse(apiErrorResponse(err, { entry }), 422);
+    }
+    throw err;
   }
 
   await appendHistory(entry);
@@ -197,10 +244,10 @@ async function handleTtsGenerate(req: Request): Promise<Response> {
   try {
     body = await parseTtsGenerateRequest(req);
   } catch (err) {
-    return jsonResponse(
-      { error: err instanceof Error ? err.message : "Invalid request body" },
-      400,
-    );
+    if (isApiError(err)) {
+      return jsonResponse(apiErrorResponse(err), errorStatus(err));
+    }
+    return jsonResponse({ errorCode: "INVALID_REQUEST_BODY" }, 400);
   }
 
   const entry = ttsEntryFromRequest(body);
@@ -222,11 +269,12 @@ async function handleTtsGenerate(req: Request): Promise<Response> {
       entry.styleTags = ["Speech", "TTS"];
     }
   } catch (err) {
-    const error = err as Error & { traceId?: string };
-    entry.error = error.message;
-    entry.traceId = error.traceId;
-    await appendHistory(entry);
-    return jsonResponse({ entry, error: error.message }, 422);
+    if (isApiError(err)) {
+      applyErrorToEntry(entry, err);
+      await appendHistory(entry);
+      return jsonResponse(apiErrorResponse(err, { entry }), 422);
+    }
+    throw err;
   }
 
   await appendHistory(entry);
@@ -236,7 +284,7 @@ async function handleTtsGenerate(req: Request): Promise<Response> {
 async function handleDelete(id: string): Promise<Response> {
   const deleted = await deleteHistory(id);
   if (!deleted) {
-    return jsonResponse({ error: "Entry not found" }, 404);
+    return jsonResponse({ errorCode: "ENTRY_NOT_FOUND" }, 404);
   }
   return jsonResponse({ ok: true });
 }
@@ -248,45 +296,45 @@ async function handlePatch(id: string, req: Request): Promise<Response> {
   try {
     body = (await req.json()) as Record<string, unknown>;
   } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400);
+    return jsonResponse({ errorCode: "INVALID_JSON" }, 400);
   }
 
   const allowedKeys = new Set(["title", "pinned"]);
   const unknownKeys = Object.keys(body).filter((k) => !allowedKeys.has(k));
   if (unknownKeys.length > 0) {
-    return jsonResponse({ error: `Unknown fields: ${unknownKeys.join(", ")}` }, 400);
+    return jsonResponse({ errorCode: "UNKNOWN_FIELDS", errorParams: { fields: unknownKeys.join(", ") } }, 400);
   }
 
   const patch: { title?: string; pinned?: boolean } = {};
 
   if ("title" in body) {
     if (typeof body.title !== "string") {
-      return jsonResponse({ error: "title must be a string" }, 400);
+      return jsonResponse({ errorCode: "TITLE_NOT_STRING" }, 400);
     }
     const title = body.title.trim();
     if (!title) {
-      return jsonResponse({ error: "title cannot be empty" }, 400);
+      return jsonResponse({ errorCode: "TITLE_EMPTY" }, 400);
     }
     if (title.length > MAX_TITLE_LENGTH) {
-      return jsonResponse({ error: `title must be at most ${MAX_TITLE_LENGTH} characters` }, 400);
+      return jsonResponse({ errorCode: "TITLE_TOO_LONG", errorParams: { max: MAX_TITLE_LENGTH } }, 400);
     }
     patch.title = title;
   }
 
   if ("pinned" in body) {
     if (typeof body.pinned !== "boolean") {
-      return jsonResponse({ error: "pinned must be a boolean" }, 400);
+      return jsonResponse({ errorCode: "PINNED_NOT_BOOLEAN" }, 400);
     }
     patch.pinned = body.pinned;
   }
 
   if (Object.keys(patch).length === 0) {
-    return jsonResponse({ error: "No valid fields to update" }, 400);
+    return jsonResponse({ errorCode: "NO_VALID_FIELDS" }, 400);
   }
 
   const entry = await updateHistory(id, patch);
   if (!entry) {
-    return jsonResponse({ error: "Entry not found" }, 404);
+    return jsonResponse({ errorCode: "ENTRY_NOT_FOUND" }, 404);
   }
   return jsonResponse({ entry });
 }
@@ -329,7 +377,7 @@ Deno.serve({ port: PORT }, async (req) => {
     if (req.method === "GET") {
       const entry = await getHistory(id);
       if (!entry) {
-        return jsonResponse({ error: "Entry not found" }, 404);
+        return jsonResponse({ errorCode: "ENTRY_NOT_FOUND" }, 404);
       }
       return jsonResponse({ entry });
     }
@@ -341,7 +389,7 @@ Deno.serve({ port: PORT }, async (req) => {
     }
   }
 
-  return jsonResponse({ error: "Not found" }, 404);
+  return jsonResponse({ errorCode: "NOT_FOUND" }, 404);
 });
 
 console.log(`Backend listening on http://localhost:${PORT}`);

@@ -1,3 +1,4 @@
+import { ApiError, mapMiniMaxErrorCode } from "./errors.ts";
 import type {
   CoverGenerateRequest,
   CoverPreprocessRequest,
@@ -11,15 +12,6 @@ import { COVER_MODELS, SONG_MODELS } from "./types.ts";
 const MINIMAX_MUSIC_URL = "https://api.minimax.io/v1/music_generation";
 const MINIMAX_COVER_PREPROCESS_URL = "https://api.minimax.io/v1/music_cover_preprocess";
 
-const ERROR_MESSAGES: Record<number, string> = {
-  1002: "Rate limit triggered — please retry later",
-  1004: "Authentication failed — check your API key",
-  1008: "Insufficient balance",
-  1026: "Content flagged for sensitive material",
-  2013: "Invalid parameters — check your input",
-  2049: "Invalid API key",
-};
-
 const AUDIO_SETTING = {
   sample_rate: 44100,
   bitrate: 256000,
@@ -29,43 +21,39 @@ const AUDIO_SETTING = {
 function getApiKey(): string {
   const apiKey = Deno.env.get("MINIMAX_API_KEY");
   if (!apiKey) {
-    throw new Error("MINIMAX_API_KEY is not configured");
+    throw new ApiError("API_KEY_NOT_CONFIGURED");
   }
   return apiKey;
 }
 
-export function mapMiniMaxError(statusCode: number, statusMsg: string): string {
-  return ERROR_MESSAGES[statusCode] ?? statusMsg ?? "Unknown error";
-}
-
-export function validateSongRequest(req: GenerateRequest): string | null {
-  if (!req.model) return "Model is required";
+export function validateSongRequest(req: GenerateRequest): ApiError | null {
+  if (!req.model) return new ApiError("MODEL_REQUIRED");
 
   if (COVER_MODELS.has(req.model)) {
-    return "Cover models must use /api/cover/generate";
+    return new ApiError("COVER_MODEL_WRONG_ENDPOINT");
   }
 
   if (!SONG_MODELS.has(req.model)) {
-    return "Unsupported model";
+    return new ApiError("UNSUPPORTED_MODEL");
   }
 
   if (req.isInstrumental) {
     if (!req.prompt?.trim()) {
-      return "Style prompt is required for instrumental music";
+      return new ApiError("STYLE_PROMPT_REQUIRED_INSTRUMENTAL");
     }
     if (req.prompt.length > 2000) {
-      return "Style prompt must be at most 2000 characters";
+      return new ApiError("STYLE_PROMPT_TOO_LONG", { max: 2000 });
     }
   } else {
     if (req.prompt && req.prompt.length > 2000) {
-      return "Style prompt must be at most 2000 characters";
+      return new ApiError("STYLE_PROMPT_TOO_LONG", { max: 2000 });
     }
     if (!req.lyricsOptimizer) {
       if (!req.lyrics?.trim()) {
-        return "Lyrics are required unless auto-generate is enabled";
+        return new ApiError("LYRICS_REQUIRED");
       }
       if (req.lyrics.length > 3500) {
-        return "Lyrics must be at most 3500 characters";
+        return new ApiError("LYRICS_TOO_LONG", { max: 3500 });
       }
     }
   }
@@ -73,29 +61,29 @@ export function validateSongRequest(req: GenerateRequest): string | null {
   return null;
 }
 
-export function validateCoverPreprocess(req: CoverPreprocessRequest): string | null {
-  if (!req.model) return "Model is required";
-  if (!COVER_MODELS.has(req.model)) return "Unsupported cover model";
+export function validateCoverPreprocess(req: CoverPreprocessRequest): ApiError | null {
+  if (!req.model) return new ApiError("MODEL_REQUIRED");
+  if (!COVER_MODELS.has(req.model)) return new ApiError("UNSUPPORTED_COVER_MODEL");
 
   const hasUrl = Boolean(req.audioUrl?.trim());
   const hasBase64 = Boolean(req.audioBase64?.trim());
 
   if (!hasUrl && !hasBase64) {
-    return "Reference audio URL or file is required";
+    return new ApiError("REFERENCE_AUDIO_REQUIRED");
   }
   if (hasUrl && hasBase64) {
-    return "Provide either reference audio URL or file, not both";
+    return new ApiError("REFERENCE_AUDIO_BOTH");
   }
 
   return null;
 }
 
-export function validateCoverRequest(req: CoverGenerateRequest): string | null {
-  if (!req.model) return "Model is required";
-  if (!COVER_MODELS.has(req.model)) return "Unsupported cover model";
+export function validateCoverRequest(req: CoverGenerateRequest): ApiError | null {
+  if (!req.model) return new ApiError("MODEL_REQUIRED");
+  if (!COVER_MODELS.has(req.model)) return new ApiError("UNSUPPORTED_COVER_MODEL");
 
   if (!req.prompt?.trim() || req.prompt.length < 10 || req.prompt.length > 300) {
-    return "Style prompt must be 10–300 characters";
+    return new ApiError("STYLE_PROMPT_LENGTH");
   }
 
   const hasFeatureId = Boolean(req.coverFeatureId?.trim());
@@ -104,19 +92,19 @@ export function validateCoverRequest(req: CoverGenerateRequest): string | null {
 
   if (hasFeatureId) {
     if (hasUrl || hasBase64) {
-      return "coverFeatureId cannot be used with reference audio";
+      return new ApiError("COVER_FEATURE_WITH_AUDIO");
     }
     if (!req.lyrics?.trim() || req.lyrics.length < 10 || req.lyrics.length > 1000) {
-      return "Lyrics must be 10–1000 characters for advanced cover";
+      return new ApiError("COVER_LYRICS_LENGTH");
     }
     return null;
   }
 
   if (!hasUrl && !hasBase64) {
-    return "Reference audio URL or file is required";
+    return new ApiError("REFERENCE_AUDIO_REQUIRED");
   }
   if (hasUrl && hasBase64) {
-    return "Provide either reference audio URL or file, not both";
+    return new ApiError("REFERENCE_AUDIO_BOTH");
   }
 
   return null;
@@ -127,7 +115,7 @@ export async function generateMusic(
 ): Promise<{ audioUrl?: string; traceId?: string; durationMs?: number }> {
   const validationError = validateSongRequest(req);
   if (validationError) {
-    throw new Error(validationError);
+    throw validationError;
   }
 
   const payload: Record<string, unknown> = {
@@ -149,7 +137,7 @@ export async function preprocessCover(
 ): Promise<CoverPreprocessResponse> {
   const validationError = validateCoverPreprocess(req);
   if (validationError) {
-    throw new Error(validationError);
+    throw validationError;
   }
 
   const payload: Record<string, unknown> = { model: req.model };
@@ -170,17 +158,16 @@ export async function preprocessCover(
   const statusCode = result.base_resp?.status_code ?? -1;
 
   if (!response.ok || statusCode !== 0) {
-    const message = mapMiniMaxError(
+    const err = mapMiniMaxErrorCode(
       statusCode,
       result.base_resp?.status_msg ?? "Request failed",
     );
-    const error = new Error(message) as Error & { traceId?: string };
-    error.traceId = result.trace_id;
-    throw error;
+    err.traceId = result.trace_id;
+    throw err;
   }
 
   if (!result.cover_feature_id || !result.formatted_lyrics) {
-    throw new Error("No cover feature data returned from MiniMax");
+    throw new ApiError("NO_COVER_FEATURE_DATA");
   }
 
   return {
@@ -197,7 +184,7 @@ export async function generateCover(
 ): Promise<{ audioUrl?: string; traceId?: string; durationMs?: number }> {
   const validationError = validateCoverRequest(req);
   if (validationError) {
-    throw new Error(validationError);
+    throw validationError;
   }
 
   const payload: Record<string, unknown> = {
@@ -237,18 +224,17 @@ async function callMusicGeneration(
   const statusCode = result.base_resp?.status_code ?? -1;
 
   if (!response.ok || statusCode !== 0) {
-    const message = mapMiniMaxError(
+    const err = mapMiniMaxErrorCode(
       statusCode,
       result.base_resp?.status_msg ?? "Request failed",
     );
-    const error = new Error(message) as Error & { traceId?: string };
-    error.traceId = result.trace_id;
-    throw error;
+    err.traceId = result.trace_id;
+    throw err;
   }
 
   const audioUrl = result.data?.audio;
   if (!audioUrl) {
-    throw new Error("No audio URL returned from MiniMax");
+    throw new ApiError("NO_AUDIO_URL");
   }
 
   return {
@@ -257,3 +243,6 @@ async function callMusicGeneration(
     durationMs: result.extra_info?.music_duration,
   };
 }
+
+// Re-export for minimax-tts compatibility
+export { mapMiniMaxErrorCode as mapMiniMaxError };
