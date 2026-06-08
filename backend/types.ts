@@ -48,6 +48,7 @@ export interface TtsGenerateRequest {
   text: string;
   audioUrl?: string;
   audioBase64?: string;
+  voicePrompt?: string;
 }
 
 export interface HistoryEntry {
@@ -70,6 +71,7 @@ export interface HistoryEntry {
   traceId?: string;
   durationMs?: number;
   voiceId?: string;
+  voicePrompt?: string;
 }
 
 export interface MiniMaxMusicResponse {
@@ -111,6 +113,31 @@ export interface MiniMaxFileUploadResponse {
 
 export interface MiniMaxVoiceCloneResponse {
   demo_audio?: string;
+  trace_id?: string;
+  extra_info?: {
+    audio_length?: number;
+  };
+  base_resp?: {
+    status_code: number;
+    status_msg: string;
+  };
+}
+
+export interface MiniMaxVoiceDesignResponse {
+  voice_id?: string;
+  trial_audio?: string;
+  trace_id?: string;
+  base_resp?: {
+    status_code: number;
+    status_msg: string;
+  };
+}
+
+export interface MiniMaxT2aResponse {
+  data?: {
+    audio?: string;
+    status?: number;
+  };
   trace_id?: string;
   extra_info?: {
     audio_length?: number;

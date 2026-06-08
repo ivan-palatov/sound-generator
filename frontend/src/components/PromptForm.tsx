@@ -73,9 +73,7 @@ export function PromptForm({ values, onChange, onSubmit, loading }: PromptFormPr
             value={values.lyricsOptimizer ? "" : (values.lyrics ?? "")}
             onChange={(e) => setLyrics(e.target.value)}
             placeholder={
-              values.lyricsOptimizer
-                ? t("song.lyricsAutoPlaceholder")
-                : t("song.lyricsPlaceholder")
+              values.lyricsOptimizer ? t("song.lyricsAutoPlaceholder") : t("song.lyricsPlaceholder")
             }
             rows={8}
             readOnly={values.lyricsOptimizer}

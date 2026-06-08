@@ -109,9 +109,7 @@ export function CoverForm({
           disabled={loading || preprocessing}
           className="file-input"
         />
-        {values.audioFile && (
-          <p className="field-hint file-name">{values.audioFile.name}</p>
-        )}
+        {values.audioFile && <p className="field-hint file-name">{values.audioFile.name}</p>}
         <span className="field-divider">{t("common.or")}</span>
         <input
           type="url"

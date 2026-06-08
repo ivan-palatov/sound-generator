@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { generateTts, isApiClientError, translateError, updateHistoryEntry } from "../api/client.ts";
+import {
+  generateTts,
+  isApiClientError,
+  translateError,
+  updateHistoryEntry,
+} from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import {
   defaultTtsForm,

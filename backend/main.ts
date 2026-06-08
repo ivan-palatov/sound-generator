@@ -76,7 +76,8 @@ function errorStatus(err: ApiError): number {
     "COVER_LYRICS_LENGTH",
     "SPEECH_TEXT_REQUIRED",
     "SPEECH_TEXT_TOO_LONG",
-    "VOICE_SAMPLE_REQUIRED",
+    "VOICE_SOURCE_REQUIRED",
+    "VOICE_PROMPT_TOO_LONG",
     "VOICE_SAMPLE_BOTH",
     "VOICE_SAMPLE_TOO_LARGE",
     "UNKNOWN_FIELDS",
@@ -235,6 +236,7 @@ function ttsEntryFromRequest(body: TtsGenerateRequest): HistoryEntry {
     isInstrumental: false,
     lyricsOptimizer: false,
     referenceAudioUrl: ttsReferenceAudioLabel(body),
+    voicePrompt: body.voicePrompt?.trim() || undefined,
     status: "failed",
   };
 }

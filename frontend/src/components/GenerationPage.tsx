@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { generateMusic, isApiClientError, translateError, updateHistoryEntry } from "../api/client.ts";
+import {
+  generateMusic,
+  isApiClientError,
+  translateError,
+  updateHistoryEntry,
+} from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import { defaultForm, entryToForm, type GenerationPrefill } from "../lib/generation.ts";
 import { translateEntryError } from "../lib/translateError.ts";
@@ -89,12 +94,7 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
   return (
     <main className="main-panel">
       <ModelSelector value={model} onChange={setModel} disabled={loading} />
-      <PromptForm
-        values={form}
-        onChange={setForm}
-        onSubmit={handleGenerate}
-        loading={loading}
-      />
+      <PromptForm values={form} onChange={setForm} onSubmit={handleGenerate} loading={loading} />
       <GenerationResult
         entry={current}
         loading={loading}

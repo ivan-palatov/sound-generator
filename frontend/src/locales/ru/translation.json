@@ -91,17 +91,21 @@
   },
   "tts": {
     "speechText": "Текст для озвучки",
-    "speechTextPlaceholder": "Введите текст, который нужно озвучить клонированным голосом…",
+    "speechTextPlaceholder": "Введите текст, который нужно озвучить…",
     "charCount": "{{count}}/{{max}} символов. До 1000 символов за генерацию.",
-    "voiceSample": "Образец голоса",
+    "voicePrompt": "Описание голоса",
+    "voicePromptPlaceholder": "мягкий женский голос, спокойный и тёплый",
+    "voicePromptHint": "Опишите желаемый голос. Можно использовать вместо образца или вместе с ним.",
+    "voiceSample": "Образец голоса (необязательно при описании)",
     "voiceSamplePlaceholder": "https://example.com/voice-sample.mp3",
-    "voiceSampleHint": "От 10 секунд до 5 минут, макс. 20 МБ. MP3, M4A или WAV.",
+    "voiceSampleHint": "От 10 секунд до 5 минут, макс. 20 МБ. MP3, M4A или WAV. Имеет приоритет над описанием.",
     "generateSpeech": "Сгенерировать речь",
     "generatingSpeech": "Генерация речи…",
     "validation": {
       "textRequired": "Требуется текст для озвучки",
       "textMax": "Текст должен содержать не более {{max}} символов",
-      "voiceRequired": "Требуется файл или URL образца голоса"
+      "voiceSourceRequired": "Требуется образец голоса или описание голоса",
+      "voicePromptMax": "Описание голоса должно содержать не более {{max}} символов"
     }
   },
   "player": {
@@ -157,7 +161,8 @@
     "COVER_LYRICS_LENGTH": "Текст для расширенного кавера должен содержать 10–1000 символов",
     "SPEECH_TEXT_REQUIRED": "Требуется текст для озвучки",
     "SPEECH_TEXT_TOO_LONG": "Текст должен содержать не более {{max}} символов",
-    "VOICE_SAMPLE_REQUIRED": "Требуется URL или файл образца голоса",
+    "VOICE_SOURCE_REQUIRED": "Требуется образец голоса или описание голоса",
+    "VOICE_PROMPT_TOO_LONG": "Описание голоса должно содержать не более {{max}} символов",
     "VOICE_SAMPLE_BOTH": "Укажите URL или файл образца голоса, но не оба",
     "VOICE_SAMPLE_TOO_LARGE": "Образец голоса должен быть не более {{maxMB}} МБ",
     "API_KEY_NOT_CONFIGURED": "API-ключ MINIMAX не настроен",
@@ -172,6 +177,7 @@
     "NO_FILE_ID": "MiniMax не вернул ID файла после загрузки",
     "VOICE_SAMPLE_FETCH_FAILED": "Не удалось загрузить образец голоса по URL",
     "NO_VOICE_CLONE_AUDIO": "MiniMax не вернул URL аудио после клонирования голоса",
+    "NO_TTS_AUDIO": "MiniMax не вернул URL аудио после синтеза речи",
     "EXTERNAL_SERVICE_ERROR": "{{message}}",
     "GENERATION_FAILED": "Ошибка генерации",
     "PREPROCESS_FAILED": "Ошибка предобработки",

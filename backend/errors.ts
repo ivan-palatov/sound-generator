@@ -29,7 +29,8 @@ export type ApiErrorCode =
   | "COVER_LYRICS_LENGTH"
   | "SPEECH_TEXT_REQUIRED"
   | "SPEECH_TEXT_TOO_LONG"
-  | "VOICE_SAMPLE_REQUIRED"
+  | "VOICE_SOURCE_REQUIRED"
+  | "VOICE_PROMPT_TOO_LONG"
   | "VOICE_SAMPLE_BOTH"
   | "VOICE_SAMPLE_TOO_LARGE"
   | "API_KEY_NOT_CONFIGURED"
@@ -44,6 +45,7 @@ export type ApiErrorCode =
   | "NO_FILE_ID"
   | "VOICE_SAMPLE_FETCH_FAILED"
   | "NO_VOICE_CLONE_AUDIO"
+  | "NO_TTS_AUDIO"
   | "EXTERNAL_SERVICE_ERROR";
 
 export type ApiErrorParams = Record<string, string | number>;

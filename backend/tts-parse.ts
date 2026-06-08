@@ -34,6 +34,7 @@ export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerate
 
     const text = form.get("text")?.toString() ?? "";
     const audioUrl = form.get("audioUrl")?.toString().trim();
+    const voicePrompt = form.get("voicePrompt")?.toString().trim();
     const audioFile = form.get("audio");
 
     if (audioFile instanceof File && audioFile.size > 0) {
@@ -41,13 +42,22 @@ export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerate
         model,
         text,
         audioBase64: await fileToBase64(audioFile),
+        voicePrompt: voicePrompt || undefined,
       };
     }
 
-    return { model, text, audioUrl: audioUrl || undefined };
+    return {
+      model,
+      text,
+      audioUrl: audioUrl || undefined,
+      voicePrompt: voicePrompt || undefined,
+    };
   }
 
   const body = (await req.json()) as TtsGenerateRequest;
+  if (body.voicePrompt !== undefined) {
+    body.voicePrompt = body.voicePrompt.trim() || undefined;
+  }
   return body;
 }
 

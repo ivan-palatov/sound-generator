@@ -91,17 +91,21 @@
   },
   "tts": {
     "speechText": "Speech text",
-    "speechTextPlaceholder": "Enter the text you want spoken in the cloned voice…",
+    "speechTextPlaceholder": "Enter the text you want spoken…",
     "charCount": "{{count}}/{{max}} characters. Up to 1000 characters per generation.",
-    "voiceSample": "Voice sample",
+    "voicePrompt": "Voice description",
+    "voicePromptPlaceholder": "gentle female voice, calm and warm",
+    "voicePromptHint": "Describe the voice you want. Use this instead of a sample, or provide a sample to clone.",
+    "voiceSample": "Voice sample (optional if description provided)",
     "voiceSamplePlaceholder": "https://example.com/voice-sample.mp3",
-    "voiceSampleHint": "10 seconds to 5 minutes, max 20 MB. MP3, M4A, or WAV.",
+    "voiceSampleHint": "10 seconds to 5 minutes, max 20 MB. MP3, M4A, or WAV. Takes priority over voice description.",
     "generateSpeech": "Generate speech",
     "generatingSpeech": "Generating speech…",
     "validation": {
       "textRequired": "Speech text is required",
       "textMax": "Speech text must be at most {{max}} characters",
-      "voiceRequired": "Voice sample file or URL is required"
+      "voiceSourceRequired": "Voice sample or voice description is required",
+      "voicePromptMax": "Voice description must be at most {{max}} characters"
     }
   },
   "player": {
@@ -157,7 +161,8 @@
     "COVER_LYRICS_LENGTH": "Lyrics must be 10–1000 characters for advanced cover",
     "SPEECH_TEXT_REQUIRED": "Speech text is required",
     "SPEECH_TEXT_TOO_LONG": "Speech text must be at most {{max}} characters",
-    "VOICE_SAMPLE_REQUIRED": "Voice sample audio URL or file is required",
+    "VOICE_SOURCE_REQUIRED": "Voice sample or voice description is required",
+    "VOICE_PROMPT_TOO_LONG": "Voice description must be at most {{max}} characters",
     "VOICE_SAMPLE_BOTH": "Provide either voice sample URL or file, not both",
     "VOICE_SAMPLE_TOO_LARGE": "Voice sample must be at most {{maxMB}} MB",
     "API_KEY_NOT_CONFIGURED": "MINIMAX API key is not configured",
@@ -172,6 +177,7 @@
     "NO_FILE_ID": "No file ID returned from MiniMax upload",
     "VOICE_SAMPLE_FETCH_FAILED": "Failed to fetch voice sample from URL",
     "NO_VOICE_CLONE_AUDIO": "No audio URL returned from MiniMax voice clone",
+    "NO_TTS_AUDIO": "No audio URL returned from MiniMax text-to-speech",
     "EXTERNAL_SERVICE_ERROR": "{{message}}",
     "GENERATION_FAILED": "Generation failed",
     "PREPROCESS_FAILED": "Preprocess failed",

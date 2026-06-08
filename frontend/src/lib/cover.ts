@@ -42,10 +42,7 @@ export function entryToCoverPrefill(entry: HistoryEntry): CoverPrefill {
   };
 }
 
-export function coverFormToRequest(
-  model: CoverModel,
-  form: CoverFormState,
-): CoverGenerateRequest {
+export function coverFormToRequest(model: CoverModel, form: CoverFormState): CoverGenerateRequest {
   const base: CoverGenerateRequest = {
     model,
     prompt: form.prompt,

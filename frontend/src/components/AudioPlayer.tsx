@@ -29,9 +29,7 @@ export function AudioPlayer({ src, durationMs, filename }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(
-    durationMs != null ? durationMs / 1000 : 0,
-  );
+  const [duration, setDuration] = useState(durationMs != null ? durationMs / 1000 : 0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -162,10 +160,7 @@ export function AudioPlayer({ src, durationMs, filename }: AudioPlayerProps) {
               strokeLinecap="round"
             />
           ) : (
-            <path
-              d="M9 7.5v9l8-4.5-8-4.5Z"
-              fill="currentColor"
-            />
+            <path d="M9 7.5v9l8-4.5-8-4.5Z" fill="currentColor" />
           )}
         </svg>
       </button>
@@ -201,10 +196,7 @@ export function AudioPlayer({ src, durationMs, filename }: AudioPlayerProps) {
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 {muted || volume === 0 ? (
                   <>
-                    <path
-                      d="M11 7.5 7 11H4.5v2H7l4 3.5V7.5Z"
-                      fill="currentColor"
-                    />
+                    <path d="M11 7.5 7 11H4.5v2H7l4 3.5V7.5Z" fill="currentColor" />
                     <path
                       d="m16 9 5 5M21 9l-5 5"
                       stroke="currentColor"
@@ -214,10 +206,7 @@ export function AudioPlayer({ src, durationMs, filename }: AudioPlayerProps) {
                   </>
                 ) : volume < 0.5 ? (
                   <>
-                    <path
-                      d="M11 7.5 7 11H4.5v2H7l4 3.5V7.5Z"
-                      fill="currentColor"
-                    />
+                    <path d="M11 7.5 7 11H4.5v2H7l4 3.5V7.5Z" fill="currentColor" />
                     <path
                       d="M16 13.5a3.5 3.5 0 0 0 0-5"
                       stroke="currentColor"
@@ -227,10 +216,7 @@ export function AudioPlayer({ src, durationMs, filename }: AudioPlayerProps) {
                   </>
                 ) : (
                   <>
-                    <path
-                      d="M11 7.5 7 11H4.5v2H7l4 3.5V7.5Z"
-                      fill="currentColor"
-                    />
+                    <path d="M11 7.5 7 11H4.5v2H7l4 3.5V7.5Z" fill="currentColor" />
                     <path
                       d="M15 9.5a4.5 4.5 0 0 1 0 5M17.5 7a7.5 7.5 0 0 1 0 10"
                       stroke="currentColor"

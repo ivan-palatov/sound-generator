@@ -5,6 +5,7 @@ export interface TtsFormState {
   text: string;
   audioFile: File | null;
   audioUrl: string;
+  voicePrompt: string;
 }
 
 export interface TtsPrefill {
@@ -16,6 +17,7 @@ export const defaultTtsForm: TtsFormState = {
   text: "",
   audioFile: null,
   audioUrl: "",
+  voicePrompt: "",
 };
 
 export function isTtsEntry(entry: HistoryEntry): boolean {
@@ -27,6 +29,7 @@ export function entryToTtsForm(entry: HistoryEntry): TtsFormState {
     text: entry.prompt,
     audioFile: null,
     audioUrl: entry.referenceAudioUrl?.startsWith("http") ? entry.referenceAudioUrl : "",
+    voicePrompt: entry.voicePrompt ?? "",
   };
 }
 
@@ -43,5 +46,6 @@ export function ttsFormToRequest(model: TtsModel, form: TtsFormState): TtsGenera
     text: form.text.trim(),
     audioUrl: form.audioFile ? undefined : form.audioUrl.trim() || undefined,
     audioFile: form.audioFile,
+    voicePrompt: form.voicePrompt.trim() || undefined,
   };
 }

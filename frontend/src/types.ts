@@ -44,6 +44,7 @@ export interface TtsGenerateRequest {
   text: string;
   audioUrl?: string;
   audioFile?: File | null;
+  voicePrompt?: string;
 }
 
 export interface HistoryEntry {
@@ -66,6 +67,7 @@ export interface HistoryEntry {
   traceId?: string;
   durationMs?: number;
   voiceId?: string;
+  voicePrompt?: string;
 }
 
 export const SONG_MODELS: { value: MusicModel }[] = [

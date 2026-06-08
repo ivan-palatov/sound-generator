@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TtsFormState } from "../lib/tts.ts";
 
 const MAX_TEXT_LENGTH = 1000;
+const MAX_VOICE_PROMPT_LENGTH = 500;
 
 interface TtsFormProps {
   values: TtsFormState;
@@ -18,8 +19,13 @@ function validate(values: TtsFormState, t: TFunction): string | null {
     return t("tts.validation.textMax", { max: MAX_TEXT_LENGTH });
   }
 
-  if (!values.audioFile && !values.audioUrl.trim()) {
-    return t("tts.validation.voiceRequired");
+  const hasVoiceSample = Boolean(values.audioFile || values.audioUrl.trim());
+  const voicePrompt = values.voicePrompt.trim();
+  if (!hasVoiceSample && !voicePrompt) {
+    return t("tts.validation.voiceSourceRequired");
+  }
+  if (voicePrompt.length > MAX_VOICE_PROMPT_LENGTH) {
+    return t("tts.validation.voicePromptMax", { max: MAX_VOICE_PROMPT_LENGTH });
   }
 
   return null;
@@ -65,6 +71,19 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
       </label>
 
       <label className="field">
+        <span className="field-label">{t("tts.voicePrompt")}</span>
+        <textarea
+          value={values.voicePrompt}
+          onChange={(e) => update({ voicePrompt: e.target.value })}
+          placeholder={t("tts.voicePromptPlaceholder")}
+          rows={3}
+          disabled={loading}
+          maxLength={MAX_VOICE_PROMPT_LENGTH}
+        />
+        <p className="field-hint">{t("tts.voicePromptHint")}</p>
+      </label>
+
+      <label className="field">
         <span className="field-label">{t("tts.voiceSample")}</span>
         <input
           type="file"
@@ -73,9 +92,7 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
           disabled={loading}
           className="file-input"
         />
-        {values.audioFile && (
-          <p className="field-hint file-name">{values.audioFile.name}</p>
-        )}
+        {values.audioFile && <p className="field-hint file-name">{values.audioFile.name}</p>}
         <span className="field-divider">{t("common.or")}</span>
         <input
           type="url"
@@ -89,11 +106,7 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
 
       {validationError && <p className="validation-error">{validationError}</p>}
 
-      <button
-        type="submit"
-        className="generate-btn"
-        disabled={loading || !!validationError}
-      >
+      <button type="submit" className="generate-btn" disabled={loading || !!validationError}>
         {loading ? t("tts.generatingSpeech") : t("tts.generateSpeech")}
       </button>
     </form>

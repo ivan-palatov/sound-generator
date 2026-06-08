@@ -6,10 +6,7 @@ import type {
   HistoryEntry,
   TtsGenerateRequest,
 } from "../types.ts";
-import {
-  ApiClientError,
-  type ApiErrorParams,
-} from "../lib/translateError.ts";
+import { ApiClientError, type ApiErrorParams } from "../lib/translateError.ts";
 
 interface ApiErrorBody {
   errorCode?: string;
@@ -58,9 +55,10 @@ export interface GenerationError {
   params?: ApiErrorParams;
 }
 
-function parseGenerationResponse(
-  data: ApiErrorBody & { entry?: HistoryEntry },
-): { entry: HistoryEntry; error?: GenerationError } {
+function parseGenerationResponse(data: ApiErrorBody & { entry?: HistoryEntry }): {
+  entry: HistoryEntry;
+  error?: GenerationError;
+} {
   if (data.errorCode) {
     return {
       entry: data.entry!,
@@ -114,7 +112,10 @@ export async function preprocessCover(input: {
     hasFile
       ? {
           method: "POST",
-          body: buildCoverFormData({ model: input.model, audioUrl: input.audioUrl }, input.audioFile),
+          body: buildCoverFormData(
+            { model: input.model, audioUrl: input.audioUrl },
+            input.audioFile,
+          ),
         }
       : {
           method: "POST",
@@ -197,6 +198,7 @@ export async function generateTts(
               model: body.model,
               text: body.text,
               audioUrl: body.audioUrl,
+              voicePrompt: body.voicePrompt,
             },
             body.audioFile,
           ),
@@ -208,6 +210,7 @@ export async function generateTts(
             model: body.model,
             text: body.text,
             audioUrl: body.audioUrl,
+            voicePrompt: body.voicePrompt,
           }),
         },
   );

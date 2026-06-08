@@ -127,9 +127,7 @@ export function CoverPage({ mode, initialEntry, prefill, onGenerated }: CoverPag
 
     try {
       const readyForm = await ensureCoverFeatureId(form);
-      const { entry, error: genError } = await generateCover(
-        coverFormToRequest(model, readyForm),
-      );
+      const { entry, error: genError } = await generateCover(coverFormToRequest(model, readyForm));
       setCurrent(entry);
       if (genError) {
         setError(

@@ -46,9 +46,7 @@ export function GenerationResult({
     return (
       <div className="generation-result error">
         <p>{error}</p>
-        {entry?.traceId && (
-          <p className="trace-id">{t("common.trace", { id: entry.traceId })}</p>
-        )}
+        {entry?.traceId && <p className="trace-id">{t("common.trace", { id: entry.traceId })}</p>}
       </div>
     );
   }
@@ -63,14 +61,11 @@ export function GenerationResult({
   }
 
   if (entry.status === "failed") {
-    const failedMessage =
-      translateEntryError(entry) ?? t("result.generationFailed");
+    const failedMessage = translateEntryError(entry) ?? t("result.generationFailed");
     return (
       <div className="generation-result error">
         <p>{failedMessage}</p>
-        {entry.traceId && (
-          <p className="trace-id">{t("common.trace", { id: entry.traceId })}</p>
-        )}
+        {entry.traceId && <p className="trace-id">{t("common.trace", { id: entry.traceId })}</p>}
       </div>
     );
   }
@@ -163,20 +158,14 @@ export function GenerationResult({
         </div>
       )}
       {entry.audioUrl && (
-        <AudioPlayer
-          src={entry.audioUrl}
-          durationMs={entry.durationMs}
-          filename={title}
-        />
+        <AudioPlayer src={entry.audioUrl} durationMs={entry.durationMs} filename={title} />
       )}
       {entry.durationMs != null && (
         <p className="meta">
           {t("common.duration", { seconds: (entry.durationMs / 1000).toFixed(1) })}
         </p>
       )}
-      {entry.traceId && (
-        <p className="trace-id">{t("common.trace", { id: entry.traceId })}</p>
-      )}
+      {entry.traceId && <p className="trace-id">{t("common.trace", { id: entry.traceId })}</p>}
       <p className="hint">{t("result.urlExpiry")}</p>
     </div>
   );

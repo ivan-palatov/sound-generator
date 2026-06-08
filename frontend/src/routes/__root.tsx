@@ -26,10 +26,7 @@ function RootLayout() {
               </div>
               <div className="app-header-actions">
                 <nav className="mode-tabs" aria-label={t("nav.generationMode")}>
-                  <Link
-                    to="/"
-                    className={`mode-tab ${!isCover && !isTts ? "active" : ""}`}
-                  >
+                  <Link to="/" className={`mode-tab ${!isCover && !isTts ? "active" : ""}`}>
                     {t("nav.newSong")}
                   </Link>
                   <Link to="/cover" className={`mode-tab ${isCover ? "active" : ""}`}>
