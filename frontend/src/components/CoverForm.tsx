@@ -1,6 +1,8 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { CoverFormState } from "../lib/cover.ts";
+import { mergeAudioSettings } from "../lib/generationOptions.ts";
+import { MusicAdvancedSettings } from "./AdvancedSettings.tsx";
 import type { CoverWorkflow } from "../types.ts";
 
 interface CoverFormProps {
@@ -157,6 +159,12 @@ export function CoverForm({
           </button>
         </div>
       )}
+
+      <MusicAdvancedSettings
+        value={mergeAudioSettings(values.audioSettings)}
+        onChange={(audioSettings) => update({ audioSettings })}
+        disabled={loading || preprocessing}
+      />
 
       {validationError && <p className="validation-error">{validationError}</p>}
 

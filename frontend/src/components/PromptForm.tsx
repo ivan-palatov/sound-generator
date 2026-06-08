@@ -1,6 +1,8 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { GenerateRequest } from "../types.ts";
+import { mergeAudioSettings } from "../lib/generationOptions.ts";
+import { MusicAdvancedSettings } from "./AdvancedSettings.tsx";
 
 interface PromptFormProps {
   values: Omit<GenerateRequest, "model">;
@@ -101,6 +103,12 @@ export function PromptForm({ values, onChange, onSubmit, loading }: PromptFormPr
           {t("song.autoLyrics")}
         </label>
       </div>
+
+      <MusicAdvancedSettings
+        value={mergeAudioSettings(values.audioSettings)}
+        onChange={(audioSettings) => update({ audioSettings })}
+        disabled={loading}
+      />
 
       {validationError && <p className="validation-error">{validationError}</p>}
 

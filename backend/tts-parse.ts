@@ -1,5 +1,5 @@
 import { ApiError } from "./errors.ts";
-import type { TtsGenerateRequest, TtsModel } from "./types.ts";
+import type { TtsGenerateRequest, TtsModel, TtsSettings } from "./types.ts";
 import { TTS_MODELS } from "./types.ts";
 
 const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
@@ -24,6 +24,15 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
+function parseTtsSettingsField(value: FormDataEntryValue | null): TtsSettings | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  try {
+    return JSON.parse(value) as TtsSettings;
+  } catch {
+    throw new ApiError("INVALID_TTS_SETTINGS");
+  }
+}
+
 export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerateRequest> {
   const contentType = req.headers.get("content-type") ?? "";
 
@@ -35,6 +44,7 @@ export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerate
     const text = form.get("text")?.toString() ?? "";
     const audioUrl = form.get("audioUrl")?.toString().trim();
     const voicePrompt = form.get("voicePrompt")?.toString().trim();
+    const ttsSettings = parseTtsSettingsField(form.get("ttsSettings"));
     const audioFile = form.get("audio");
 
     if (audioFile instanceof File && audioFile.size > 0) {
@@ -43,6 +53,7 @@ export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerate
         text,
         audioBase64: await fileToBase64(audioFile),
         voicePrompt: voicePrompt || undefined,
+        ttsSettings,
       };
     }
 
@@ -51,6 +62,7 @@ export async function parseTtsGenerateRequest(req: Request): Promise<TtsGenerate
       text,
       audioUrl: audioUrl || undefined,
       voicePrompt: voicePrompt || undefined,
+      ttsSettings,
     };
   }
 

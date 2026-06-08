@@ -1,5 +1,10 @@
 import { ApiError } from "./errors.ts";
-import type { CoverGenerateRequest, CoverModel, CoverPreprocessRequest } from "./types.ts";
+import type {
+  AudioOutputSettings,
+  CoverGenerateRequest,
+  CoverModel,
+  CoverPreprocessRequest,
+} from "./types.ts";
 import { COVER_MODELS } from "./types.ts";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
@@ -22,6 +27,15 @@ async function fileToBase64(file: File): Promise<string> {
     binary += String.fromCharCode(byte);
   }
   return btoa(binary);
+}
+
+function parseAudioSettingsField(value: FormDataEntryValue | null): AudioOutputSettings | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  try {
+    return JSON.parse(value) as AudioOutputSettings;
+  } catch {
+    throw new ApiError("INVALID_AUDIO_SETTINGS");
+  }
 }
 
 export async function parseCoverPreprocessRequest(
@@ -65,6 +79,7 @@ export async function parseCoverGenerateRequest(
     const coverFeatureId = form.get("coverFeatureId")?.toString().trim();
     const lyrics = form.get("lyrics")?.toString();
     const audioUrl = form.get("audioUrl")?.toString().trim();
+    const audioSettings = parseAudioSettingsField(form.get("audioSettings"));
     const audioFile = form.get("audio");
 
     if (coverFeatureId) {
@@ -73,6 +88,7 @@ export async function parseCoverGenerateRequest(
         prompt,
         coverFeatureId,
         lyrics: lyrics ?? undefined,
+        audioSettings,
       };
     }
 
@@ -81,6 +97,7 @@ export async function parseCoverGenerateRequest(
         model,
         prompt,
         audioBase64: await fileToBase64(audioFile),
+        audioSettings,
       };
     }
 
@@ -88,6 +105,7 @@ export async function parseCoverGenerateRequest(
       model,
       prompt,
       audioUrl: audioUrl || undefined,
+      audioSettings,
     };
   }
 

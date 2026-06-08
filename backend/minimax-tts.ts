@@ -1,3 +1,9 @@
+import {
+  buildT2aAudioSetting,
+  buildT2aVoiceSetting,
+  resolveLanguageBoost,
+  validateTtsSettings,
+} from "./generation-settings.ts";
 import { ApiError, mapMiniMaxErrorCode } from "./errors.ts";
 import type {
   MiniMaxFileUploadResponse,
@@ -6,6 +12,7 @@ import type {
   MiniMaxVoiceDesignResponse,
   TtsGenerateRequest,
   TtsModel,
+  TtsSettings,
 } from "./types.ts";
 import { TTS_MODELS } from "./types.ts";
 
@@ -60,6 +67,9 @@ export function validateTtsRequest(req: TtsGenerateRequest): ApiError | null {
   if (hasPrompt && req.voicePrompt!.trim().length > MAX_VOICE_PROMPT_LENGTH) {
     return new ApiError("VOICE_PROMPT_TOO_LONG", { max: MAX_VOICE_PROMPT_LENGTH });
   }
+
+  const settingsError = validateTtsSettings(req.ttsSettings);
+  if (settingsError) return settingsError;
 
   return null;
 }
@@ -121,24 +131,19 @@ function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
-async function generateTtsClone(
-  req: TtsGenerateRequest,
-): Promise<{ audioUrl: string; traceId?: string; durationMs?: number; voiceId: string }> {
-  let audioBytes: Uint8Array;
-  let filename: string;
-
-  if (req.audioBase64?.trim()) {
-    audioBytes = base64ToBytes(req.audioBase64.trim());
-    filename = "voice_sample.mp3";
-  } else {
-    const fetched = await fetchAudioFromUrl(req.audioUrl!.trim());
-    audioBytes = fetched.bytes;
-    filename = fetched.filename;
-  }
-
-  const fileId = await uploadVoiceCloneFile(audioBytes, filename);
-  const voiceId = generateVoiceId();
+async function registerClonedVoice(
+  fileId: number,
+  voiceId: string,
+  settings?: TtsSettings,
+): Promise<void> {
   const apiKey = getApiKey();
+  const payload: Record<string, unknown> = {
+    file_id: fileId,
+    voice_id: voiceId,
+    language_boost: resolveLanguageBoost(settings),
+    need_noise_reduction: settings?.needNoiseReduction ?? false,
+    need_volume_normalization: settings?.needVolumeNormalization ?? false,
+  };
 
   const response = await fetch(MINIMAX_VOICE_CLONE_URL, {
     method: "POST",
@@ -146,12 +151,7 @@ async function generateTtsClone(
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      file_id: fileId,
-      voice_id: voiceId,
-      text: req.text.trim(),
-      model: req.model,
-    }),
+    body: JSON.stringify(payload),
   });
 
   const result = (await response.json()) as MiniMaxVoiceCloneResponse;
@@ -165,18 +165,6 @@ async function generateTtsClone(
     err.traceId = result.trace_id;
     throw err;
   }
-
-  const audioUrl = result.demo_audio;
-  if (!audioUrl) {
-    throw new ApiError("NO_VOICE_CLONE_AUDIO");
-  }
-
-  return {
-    audioUrl,
-    traceId: result.trace_id,
-    durationMs: result.extra_info?.audio_length,
-    voiceId,
-  };
 }
 
 async function designVoiceFromPrompt(
@@ -221,6 +209,7 @@ async function synthesizeT2a(
   model: TtsModel,
   text: string,
   voiceId: string,
+  settings?: TtsSettings,
 ): Promise<{ audioUrl: string; traceId?: string; durationMs?: number }> {
   const apiKey = getApiKey();
 
@@ -235,18 +224,9 @@ async function synthesizeT2a(
       text,
       stream: false,
       output_format: "url",
-      voice_setting: {
-        voice_id: voiceId,
-        speed: 1,
-        vol: 1,
-        pitch: 0,
-      },
-      audio_setting: {
-        format: "mp3",
-        sample_rate: 32000,
-        bitrate: 128000,
-        channel: 1,
-      },
+      language_boost: resolveLanguageBoost(settings),
+      voice_setting: buildT2aVoiceSetting(voiceId, settings),
+      audio_setting: buildT2aAudioSetting(settings),
     }),
   });
 
@@ -274,13 +254,39 @@ async function synthesizeT2a(
   };
 }
 
+async function generateTtsClone(
+  req: TtsGenerateRequest,
+): Promise<{ audioUrl: string; traceId?: string; durationMs?: number; voiceId: string }> {
+  let audioBytes: Uint8Array;
+  let filename: string;
+
+  if (req.audioBase64?.trim()) {
+    audioBytes = base64ToBytes(req.audioBase64.trim());
+    filename = "voice_sample.mp3";
+  } else {
+    const fetched = await fetchAudioFromUrl(req.audioUrl!.trim());
+    audioBytes = fetched.bytes;
+    filename = fetched.filename;
+  }
+
+  const fileId = await uploadVoiceCloneFile(audioBytes, filename);
+  const voiceId = generateVoiceId();
+  await registerClonedVoice(fileId, voiceId, req.ttsSettings);
+  const result = await synthesizeT2a(req.model, req.text.trim(), voiceId, req.ttsSettings);
+
+  return {
+    ...result,
+    voiceId,
+  };
+}
+
 async function generateTtsFromPrompt(
   req: TtsGenerateRequest,
 ): Promise<{ audioUrl: string; traceId?: string; durationMs?: number; voiceId: string }> {
   const prompt = req.voicePrompt!.trim();
   const previewText = req.text.trim().slice(0, MAX_PREVIEW_TEXT_LENGTH);
   const voiceId = await designVoiceFromPrompt(prompt, previewText);
-  const result = await synthesizeT2a(req.model, req.text.trim(), voiceId);
+  const result = await synthesizeT2a(req.model, req.text.trim(), voiceId, req.ttsSettings);
 
   return {
     ...result,

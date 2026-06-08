@@ -12,12 +12,95 @@ export type TtsModel = "speech-2.8-hd" | "speech-2.8-turbo";
 
 export type HistoryStatus = "completed" | "failed";
 
+export type LanguageBoost =
+  | "auto"
+  | "Chinese"
+  | "Chinese,Yue"
+  | "English"
+  | "Arabic"
+  | "Russian"
+  | "Spanish"
+  | "French"
+  | "Portuguese"
+  | "German"
+  | "Turkish"
+  | "Dutch"
+  | "Ukrainian"
+  | "Vietnamese"
+  | "Indonesian"
+  | "Japanese"
+  | "Italian"
+  | "Korean"
+  | "Thai"
+  | "Polish"
+  | "Romanian"
+  | "Greek"
+  | "Czech"
+  | "Finnish"
+  | "Hindi"
+  | "Bulgarian"
+  | "Danish"
+  | "Hebrew"
+  | "Malay"
+  | "Persian"
+  | "Slovak"
+  | "Swedish"
+  | "Croatian"
+  | "Filipino"
+  | "Hungarian"
+  | "Norwegian"
+  | "Slovenian"
+  | "Catalan"
+  | "Nynorsk"
+  | "Tamil"
+  | "Afrikaans";
+
+export type TtsEmotion =
+  | "happy"
+  | "sad"
+  | "angry"
+  | "fearful"
+  | "disgusted"
+  | "surprised"
+  | "calm"
+  | "fluent"
+  | "whisper";
+
+export interface AudioOutputSettings {
+  sampleRate?: number;
+  bitrate?: number;
+  format?: "mp3" | "wav" | "pcm";
+}
+
+export interface TtsAudioSettings {
+  sampleRate?: number;
+  bitrate?: number;
+  format?: "mp3" | "pcm" | "flac" | "wav";
+}
+
+export interface TtsVoiceSettings {
+  speed?: number;
+  vol?: number;
+  pitch?: number;
+  emotion?: TtsEmotion;
+  textNormalization?: boolean;
+}
+
+export interface TtsSettings {
+  languageBoost?: LanguageBoost;
+  voice?: TtsVoiceSettings;
+  audio?: TtsAudioSettings;
+  needNoiseReduction?: boolean;
+  needVolumeNormalization?: boolean;
+}
+
 export interface GenerateRequest {
   model: MusicModel;
   prompt: string;
   lyrics?: string;
   isInstrumental: boolean;
   lyricsOptimizer: boolean;
+  audioSettings?: AudioOutputSettings;
 }
 
 export interface CoverPreprocessRequest {
@@ -41,6 +124,7 @@ export interface CoverGenerateRequest {
   audioBase64?: string;
   coverFeatureId?: string;
   lyrics?: string;
+  audioSettings?: AudioOutputSettings;
 }
 
 export interface TtsGenerateRequest {
@@ -49,6 +133,7 @@ export interface TtsGenerateRequest {
   audioUrl?: string;
   audioBase64?: string;
   voicePrompt?: string;
+  ttsSettings?: TtsSettings;
 }
 
 export interface HistoryEntry {
@@ -72,6 +157,8 @@ export interface HistoryEntry {
   durationMs?: number;
   voiceId?: string;
   voicePrompt?: string;
+  audioSettings?: AudioOutputSettings;
+  ttsSettings?: TtsSettings;
 }
 
 export interface MiniMaxMusicResponse {

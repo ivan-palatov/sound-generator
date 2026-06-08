@@ -7,7 +7,12 @@ import {
   updateHistoryEntry,
 } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
-import { defaultForm, entryToForm, type GenerationPrefill } from "../lib/generation.ts";
+import {
+  defaultForm,
+  entryToForm,
+  formToRequest,
+  type GenerationPrefill,
+} from "../lib/generation.ts";
 import { translateEntryError } from "../lib/translateError.ts";
 import type { GenerateRequest, HistoryEntry, MusicModel } from "../types.ts";
 import { GenerationResult } from "./GenerationResult.tsx";
@@ -74,7 +79,7 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
     setError(null);
 
     try {
-      const { entry, error: genError } = await generateMusic({ model, ...form });
+      const { entry, error: genError } = await generateMusic(formToRequest(model, form));
       setCurrent(entry);
       if (genError) {
         setError(translateError(genError.code, genError.params, t("result.generationFailed")));

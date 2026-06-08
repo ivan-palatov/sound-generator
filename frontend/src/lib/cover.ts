@@ -1,4 +1,9 @@
 import type { CoverGenerateRequest, CoverModel, CoverWorkflow, HistoryEntry } from "../types.ts";
+import {
+  DEFAULT_AUDIO_OUTPUT_SETTINGS,
+  mergeAudioSettings,
+  stripDefaultAudioSettings,
+} from "./generationOptions.ts";
 
 export interface CoverFormState {
   prompt: string;
@@ -7,6 +12,7 @@ export interface CoverFormState {
   workflow: CoverWorkflow;
   lyrics: string;
   coverFeatureId: string;
+  audioSettings: NonNullable<CoverGenerateRequest["audioSettings"]>;
 }
 
 export interface CoverPrefill {
@@ -21,6 +27,7 @@ export const defaultCoverForm: CoverFormState = {
   workflow: "quick",
   lyrics: "",
   coverFeatureId: "",
+  audioSettings: { ...DEFAULT_AUDIO_OUTPUT_SETTINGS },
 };
 
 export function entryToCoverForm(entry: HistoryEntry): CoverFormState {
@@ -32,6 +39,7 @@ export function entryToCoverForm(entry: HistoryEntry): CoverFormState {
     workflow: entry.lyrics?.trim() ? "advanced" : "quick",
     lyrics: entry.lyrics ?? "",
     coverFeatureId: "",
+    audioSettings: mergeAudioSettings(entry.audioSettings),
   };
 }
 
@@ -43,9 +51,11 @@ export function entryToCoverPrefill(entry: HistoryEntry): CoverPrefill {
 }
 
 export function coverFormToRequest(model: CoverModel, form: CoverFormState): CoverGenerateRequest {
+  const audioSettings = stripDefaultAudioSettings(form.audioSettings);
   const base: CoverGenerateRequest = {
     model,
     prompt: form.prompt,
+    audioSettings,
   };
 
   if (form.workflow === "advanced") {

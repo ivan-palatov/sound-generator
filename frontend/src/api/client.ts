@@ -50,6 +50,11 @@ function buildCoverFormData(
   return formData;
 }
 
+function optionalJson(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  return JSON.stringify(value);
+}
+
 export interface GenerationError {
   code: string;
   params?: ApiErrorParams;
@@ -153,6 +158,7 @@ export async function generateCover(
               audioUrl: body.audioUrl,
               coverFeatureId: body.coverFeatureId,
               lyrics: body.lyrics,
+              audioSettings: optionalJson(body.audioSettings),
             },
             body.audioFile,
           ),
@@ -166,6 +172,7 @@ export async function generateCover(
             audioUrl: body.audioUrl,
             coverFeatureId: body.coverFeatureId,
             lyrics: body.lyrics,
+            audioSettings: body.audioSettings,
           }),
         },
   );
@@ -199,6 +206,7 @@ export async function generateTts(
               text: body.text,
               audioUrl: body.audioUrl,
               voicePrompt: body.voicePrompt,
+              ttsSettings: optionalJson(body.ttsSettings),
             },
             body.audioFile,
           ),
@@ -211,6 +219,7 @@ export async function generateTts(
             text: body.text,
             audioUrl: body.audioUrl,
             voicePrompt: body.voicePrompt,
+            ttsSettings: body.ttsSettings,
           }),
         },
   );

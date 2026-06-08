@@ -80,6 +80,19 @@ function errorStatus(err: ApiError): number {
     "VOICE_PROMPT_TOO_LONG",
     "VOICE_SAMPLE_BOTH",
     "VOICE_SAMPLE_TOO_LARGE",
+    "INVALID_LANGUAGE_BOOST",
+    "INVALID_TTS_EMOTION",
+    "TTS_SPEED_OUT_OF_RANGE",
+    "TTS_VOL_OUT_OF_RANGE",
+    "TTS_PITCH_OUT_OF_RANGE",
+    "INVALID_TTS_SAMPLE_RATE",
+    "INVALID_TTS_BITRATE",
+    "INVALID_TTS_FORMAT",
+    "INVALID_MUSIC_SAMPLE_RATE",
+    "INVALID_MUSIC_BITRATE",
+    "INVALID_MUSIC_FORMAT",
+    "INVALID_TTS_SETTINGS",
+    "INVALID_AUDIO_SETTINGS",
     "UNKNOWN_FIELDS",
     "TITLE_NOT_STRING",
     "TITLE_EMPTY",
@@ -122,6 +135,7 @@ async function handleGenerate(req: Request): Promise<Response> {
     lyrics: body.lyrics,
     isInstrumental: body.isInstrumental ?? false,
     lyricsOptimizer: body.lyricsOptimizer ?? false,
+    audioSettings: body.audioSettings,
     status: "failed",
   };
 
@@ -176,6 +190,7 @@ function coverEntryFromRequest(body: CoverGenerateRequest): HistoryEntry {
     isInstrumental: false,
     lyricsOptimizer: false,
     referenceAudioUrl: referenceAudioLabel(body),
+    audioSettings: body.audioSettings,
     status: "failed",
   };
 }
@@ -237,6 +252,7 @@ function ttsEntryFromRequest(body: TtsGenerateRequest): HistoryEntry {
     lyricsOptimizer: false,
     referenceAudioUrl: ttsReferenceAudioLabel(body),
     voicePrompt: body.voicePrompt?.trim() || undefined,
+    ttsSettings: body.ttsSettings,
     status: "failed",
   };
 }

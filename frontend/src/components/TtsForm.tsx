@@ -1,6 +1,8 @@
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { TtsFormState } from "../lib/tts.ts";
+import { mergeTtsSettings } from "../lib/generationOptions.ts";
+import { TtsAdvancedSettings } from "./AdvancedSettings.tsx";
 
 const MAX_TEXT_LENGTH = 1000;
 const MAX_VOICE_PROMPT_LENGTH = 500;
@@ -103,6 +105,13 @@ export function TtsForm({ values, onChange, onSubmit, loading }: TtsFormProps) {
         />
         <p className="field-hint">{t("tts.voiceSampleHint")}</p>
       </label>
+
+      <TtsAdvancedSettings
+        value={mergeTtsSettings(values.ttsSettings)}
+        onChange={(ttsSettings) => update({ ttsSettings })}
+        hasVoiceSample={Boolean(values.audioFile || values.audioUrl.trim())}
+        disabled={loading}
+      />
 
       {validationError && <p className="validation-error">{validationError}</p>}
 

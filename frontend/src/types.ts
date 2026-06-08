@@ -14,12 +14,24 @@ export type CoverWorkflow = "quick" | "advanced";
 
 export type HistoryStatus = "completed" | "failed";
 
+export type {
+  AudioOutputSettings,
+  LanguageBoost,
+  TtsAudioSettings,
+  TtsEmotion,
+  TtsSettings,
+  TtsVoiceSettings,
+} from "./lib/generationOptions.ts";
+
+import type { AudioOutputSettings, TtsSettings } from "./lib/generationOptions.ts";
+
 export interface GenerateRequest {
   model: MusicModel;
   prompt: string;
   lyrics?: string;
   isInstrumental: boolean;
   lyricsOptimizer: boolean;
+  audioSettings?: AudioOutputSettings;
 }
 
 export interface CoverPreprocessResponse {
@@ -37,6 +49,7 @@ export interface CoverGenerateRequest {
   audioFile?: File | null;
   coverFeatureId?: string;
   lyrics?: string;
+  audioSettings?: AudioOutputSettings;
 }
 
 export interface TtsGenerateRequest {
@@ -45,6 +58,7 @@ export interface TtsGenerateRequest {
   audioUrl?: string;
   audioFile?: File | null;
   voicePrompt?: string;
+  ttsSettings?: TtsSettings;
 }
 
 export interface HistoryEntry {
@@ -68,6 +82,8 @@ export interface HistoryEntry {
   durationMs?: number;
   voiceId?: string;
   voicePrompt?: string;
+  audioSettings?: AudioOutputSettings;
+  ttsSettings?: TtsSettings;
 }
 
 export const SONG_MODELS: { value: MusicModel }[] = [

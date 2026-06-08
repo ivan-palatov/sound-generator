@@ -1,4 +1,8 @@
 import { ApiError, mapMiniMaxErrorCode } from "./errors.ts";
+import {
+  buildMusicAudioSetting,
+  validateAudioOutputSettings,
+} from "./generation-settings.ts";
 import type {
   CoverGenerateRequest,
   CoverPreprocessRequest,
@@ -12,18 +16,18 @@ import { COVER_MODELS, SONG_MODELS } from "./types.ts";
 const MINIMAX_MUSIC_URL = "https://api.minimax.io/v1/music_generation";
 const MINIMAX_COVER_PREPROCESS_URL = "https://api.minimax.io/v1/music_cover_preprocess";
 
-const AUDIO_SETTING = {
-  sample_rate: 44100,
-  bitrate: 256000,
-  format: "mp3",
-};
-
 function getApiKey(): string {
   const apiKey = Deno.env.get("MINIMAX_API_KEY");
   if (!apiKey) {
     throw new ApiError("API_KEY_NOT_CONFIGURED");
   }
   return apiKey;
+}
+
+function validateMusicAudioSettings(req: {
+  audioSettings?: GenerateRequest["audioSettings"];
+}): ApiError | null {
+  return validateAudioOutputSettings(req.audioSettings);
 }
 
 export function validateSongRequest(req: GenerateRequest): ApiError | null {
@@ -57,6 +61,9 @@ export function validateSongRequest(req: GenerateRequest): ApiError | null {
       }
     }
   }
+
+  const audioError = validateMusicAudioSettings(req);
+  if (audioError) return audioError;
 
   return null;
 }
@@ -97,6 +104,8 @@ export function validateCoverRequest(req: CoverGenerateRequest): ApiError | null
     if (!req.lyrics?.trim() || req.lyrics.length < 10 || req.lyrics.length > 1000) {
       return new ApiError("COVER_LYRICS_LENGTH");
     }
+    const audioError = validateMusicAudioSettings(req);
+    if (audioError) return audioError;
     return null;
   }
 
@@ -106,6 +115,9 @@ export function validateCoverRequest(req: CoverGenerateRequest): ApiError | null
   if (hasUrl && hasBase64) {
     return new ApiError("REFERENCE_AUDIO_BOTH");
   }
+
+  const audioError = validateMusicAudioSettings(req);
+  if (audioError) return audioError;
 
   return null;
 }
@@ -121,7 +133,7 @@ export async function generateMusic(
   const payload: Record<string, unknown> = {
     model: req.model,
     output_format: "url",
-    audio_setting: AUDIO_SETTING,
+    audio_setting: buildMusicAudioSetting(req.audioSettings),
     is_instrumental: req.isInstrumental,
     lyrics_optimizer: req.lyricsOptimizer,
   };
@@ -190,7 +202,7 @@ export async function generateCover(
   const payload: Record<string, unknown> = {
     model: req.model,
     output_format: "url",
-    audio_setting: AUDIO_SETTING,
+    audio_setting: buildMusicAudioSetting(req.audioSettings),
     prompt: req.prompt.trim(),
   };
 
