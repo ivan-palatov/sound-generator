@@ -43,8 +43,21 @@ export function GenerationResult({ entry, loading, error }: GenerationResultProp
     );
   }
 
+  const displayTitle =
+    entry.title ?? (entry.prompt ? entry.prompt.slice(0, 60) : "Untitled");
+
   return (
     <div className="generation-result success">
+      <h3 className="result-title">{displayTitle}</h3>
+      {entry.styleTags && entry.styleTags.length > 0 && (
+        <div className="history-chips result-chips">
+          {entry.styleTags.map((tag, i) => (
+            <span key={`${tag}-${i}`} className="history-chip">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
       <audio controls src={entry.audioUrl} className="audio-player" />
       {entry.durationMs != null && (
         <p className="meta">Duration: {(entry.durationMs / 1000).toFixed(1)}s</p>

@@ -1,4 +1,9 @@
 import { appendHistory, deleteHistory, getHistory, listHistory } from "./history.ts";
+import {
+  deriveTitleFallback,
+  fallbackStyleTags,
+  generateSongMetadata,
+} from "./minimax-metadata.ts";
 import { generateMusic } from "./minimax.ts";
 import type { GenerateRequest, HistoryEntry } from "./types.ts";
 
@@ -49,6 +54,15 @@ async function handleGenerate(req: Request): Promise<Response> {
     entry.audioUrl = result.audioUrl;
     entry.traceId = result.traceId;
     entry.durationMs = result.durationMs;
+
+    const metadata = await generateSongMetadata(body);
+    if (metadata) {
+      entry.title = metadata.title;
+      entry.styleTags = metadata.styleTags;
+    } else {
+      entry.title = deriveTitleFallback(body);
+      entry.styleTags = fallbackStyleTags(body.prompt ?? "");
+    }
   } catch (err) {
     const error = err as Error & { traceId?: string };
     entry.error = error.message;

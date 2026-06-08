@@ -25,6 +25,8 @@ export interface HistoryEntry {
   lyricsOptimizer: boolean;
   referenceAudioUrl?: string;
   audioUrl?: string;
+  title?: string;
+  styleTags?: string[];
   status: HistoryStatus;
   error?: string;
   traceId?: string;

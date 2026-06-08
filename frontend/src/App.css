@@ -154,8 +154,32 @@ body {
   font-weight: 600;
 }
 
-.history-prompt {
-  font-size: 0.8rem;
+.history-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.history-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+.history-chip {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  color: #a0a8d8;
+  background: rgba(91, 110, 245, 0.1);
+  border: 1px solid rgba(91, 110, 245, 0.22);
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .history-date {
@@ -327,6 +351,17 @@ body {
 .generation-result.error {
   border-color: #5a3038;
   color: #e08080;
+}
+
+.generation-result.success .result-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.generation-result.success .result-chips {
+  margin-bottom: 1rem;
 }
 
 .generation-result.success .audio-player {

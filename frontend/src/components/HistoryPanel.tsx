@@ -62,7 +62,18 @@ export function HistoryPanel() {
                 className="history-item-main"
               >
                 <span className="history-model">{entry.model}</span>
-                <span className="history-prompt">{truncate(entry.prompt || "(no prompt)")}</span>
+                <span className="history-title">
+                  {entry.title ?? truncate(entry.prompt || "(no prompt)")}
+                </span>
+                {entry.styleTags && entry.styleTags.length > 0 && (
+                  <div className="history-chips">
+                    {entry.styleTags.map((tag, i) => (
+                      <span key={`${tag}-${i}`} className="history-chip">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <span className="history-date">{formatDate(entry.createdAt)}</span>
                 {entry.status === "failed" && <span className="history-failed">Failed</span>}
               </Link>
