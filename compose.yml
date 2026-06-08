@@ -1,0 +1,45 @@
+services:
+  backend:
+    image: zver3d/sound-generator-backend:latest
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      PORT: "8000"
+    volumes:
+      - backend-data:/app/data
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
+
+  frontend:
+    image: zver3d/sound-generator-frontend:latest
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    environment:
+      BACKEND_UPSTREAM: http://backend:8000
+    depends_on:
+      - backend
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
+
+  watchtower:
+    image: nickfedor/watchtower:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_POLL_INTERVAL: 600
+    restart: unless-stopped
+
+volumes:
+  backend-data:

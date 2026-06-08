@@ -1,0 +1,17 @@
+.git
+.github
+.cursor
+**/.DS_Store
+**/*.md
+.env
+.env.*
+!.env.example
+
+node_modules
+frontend/dist
+frontend/node_modules
+backend/node_modules
+backend/data/history.json
+
+**/coverage
+**/.vite
