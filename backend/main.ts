@@ -1,4 +1,4 @@
-import { appendHistory, deleteHistory, listHistory } from "./history.ts";
+import { appendHistory, deleteHistory, getHistory, listHistory } from "./history.ts";
 import { generateMusic } from "./minimax.ts";
 import type { GenerateRequest, HistoryEntry } from "./types.ts";
 
@@ -88,9 +88,19 @@ Deno.serve({ port: PORT }, async (req) => {
     return handleGenerate(req);
   }
 
-  const deleteMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);
-  if (deleteMatch && req.method === "DELETE") {
-    return handleDelete(deleteMatch[1]);
+  const historyIdMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);
+  if (historyIdMatch) {
+    const id = historyIdMatch[1];
+    if (req.method === "GET") {
+      const entry = await getHistory(id);
+      if (!entry) {
+        return jsonResponse({ error: "Entry not found" }, 404);
+      }
+      return jsonResponse({ entry });
+    }
+    if (req.method === "DELETE") {
+      return handleDelete(id);
+    }
   }
 
   return jsonResponse({ error: "Not found" }, 404);

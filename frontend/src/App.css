@@ -54,12 +54,35 @@ body {
   overflow-y: auto;
 }
 
+.history-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
 .history-panel h2 {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #8888a0;
+}
+
+.history-new-btn {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5b6ef5;
+  background: rgba(91, 110, 245, 0.12);
+  border: 1px solid rgba(91, 110, 245, 0.35);
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.history-new-btn:hover {
+  background: rgba(91, 110, 245, 0.22);
 }
 
 .history-empty {
@@ -103,6 +126,7 @@ body {
   cursor: pointer;
   text-align: left;
   font: inherit;
+  text-decoration: none;
 }
 
 .history-item-main:hover {
@@ -283,4 +307,15 @@ body {
 .trace-id {
   font-family: monospace;
   font-size: 0.75rem;
+}
+
+.not-found-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: #5b6ef5;
+  text-decoration: none;
+}
+
+.not-found-link:hover {
+  text-decoration: underline;
 }

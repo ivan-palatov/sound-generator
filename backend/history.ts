@@ -22,6 +22,11 @@ async function writeAll(entries: HistoryEntry[]): Promise<void> {
   await Deno.writeTextFile(HISTORY_PATH, JSON.stringify(entries, null, 2));
 }
 
+export async function getHistory(id: string): Promise<HistoryEntry | null> {
+  const entries = await readAll();
+  return entries.find((e) => e.id === id) ?? null;
+}
+
 export async function listHistory(): Promise<HistoryEntry[]> {
   const entries = await readAll();
   return entries.sort(

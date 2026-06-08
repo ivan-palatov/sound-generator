@@ -20,6 +20,11 @@ export async function fetchHistory(): Promise<HistoryEntry[]> {
   return data.entries;
 }
 
+export async function fetchHistoryEntry(id: string): Promise<HistoryEntry> {
+  const data = await request<{ entry: HistoryEntry }>(`/api/history/${id}`);
+  return data.entry;
+}
+
 export async function generateMusic(
   body: GenerateRequest,
 ): Promise<{ entry: HistoryEntry; error?: string }> {

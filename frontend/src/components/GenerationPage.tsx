@@ -1,0 +1,76 @@
+import { useEffect, useState } from "react";
+import { generateMusic } from "../api/client.ts";
+import { defaultForm, entryToForm } from "../lib/generation.ts";
+import type { GenerateRequest, HistoryEntry, MusicModel } from "../types.ts";
+import { GenerationResult } from "./GenerationResult.tsx";
+import { ModelSelector } from "./ModelSelector.tsx";
+import { PromptForm } from "./PromptForm.tsx";
+
+interface GenerationPageProps {
+  mode: "new" | "entry";
+  initialEntry?: HistoryEntry;
+  onGenerated?: (entry: HistoryEntry) => void | Promise<void>;
+}
+
+export function GenerationPage({ mode, initialEntry, onGenerated }: GenerationPageProps) {
+  const [model, setModel] = useState<MusicModel>(initialEntry?.model ?? "music-2.6");
+  const [form, setForm] = useState<Omit<GenerateRequest, "model">>(
+    mode === "entry" && initialEntry ? entryToForm(initialEntry) : defaultForm,
+  );
+  const [current, setCurrent] = useState<HistoryEntry | null>(initialEntry ?? null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(
+    initialEntry?.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+  );
+
+  useEffect(() => {
+    if (mode === "new") {
+      setModel("music-2.6");
+      setForm(defaultForm);
+      setCurrent(null);
+      setError(null);
+      return;
+    }
+
+    if (initialEntry) {
+      setModel(initialEntry.model);
+      setForm(entryToForm(initialEntry));
+      setCurrent(initialEntry);
+      setError(
+        initialEntry.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
+      );
+    }
+  }, [mode, initialEntry]);
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { entry, error: genError } = await generateMusic({ model, ...form });
+      setCurrent(entry);
+      if (genError) {
+        setError(genError);
+      }
+      await onGenerated?.(entry);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Generation failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="main-panel">
+      <ModelSelector value={model} onChange={setModel} disabled={loading} />
+      <PromptForm
+        model={model}
+        values={form}
+        onChange={setForm}
+        onSubmit={handleGenerate}
+        loading={loading}
+      />
+      <GenerationResult entry={current} loading={loading} error={error} />
+    </main>
+  );
+}
