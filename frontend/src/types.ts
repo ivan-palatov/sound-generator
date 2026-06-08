@@ -19,6 +19,7 @@ export interface HistoryEntry {
   lyrics?: string;
   isInstrumental: boolean;
   lyricsOptimizer: boolean;
+  referenceAudioUrl?: string;
   audioUrl?: string;
   status: HistoryStatus;
   error?: string;

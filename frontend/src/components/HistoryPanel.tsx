@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { deleteHistoryEntry } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
+import { entryToPrefill } from "../lib/generation.ts";
 import type { HistoryEntry } from "../types.ts";
 
 function formatDate(iso: string): string {
@@ -17,6 +18,12 @@ export function HistoryPanel() {
   const navigate = useNavigate();
   const params = useParams({ strict: false });
   const activeEntryId = "entryId" in params ? params.entryId : null;
+
+  const handleDuplicate = (entry: HistoryEntry, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate({ to: "/", state: { duplicate: entryToPrefill(entry) } });
+  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -36,7 +43,7 @@ export function HistoryPanel() {
     <aside className="history-panel">
       <div className="history-panel-header">
         <h2>History</h2>
-        <Link to="/" className="history-new-btn">
+        <Link to="/" className="history-new-btn" state={{}}>
           + New
         </Link>
       </div>
@@ -59,14 +66,50 @@ export function HistoryPanel() {
                 <span className="history-date">{formatDate(entry.createdAt)}</span>
                 {entry.status === "failed" && <span className="history-failed">Failed</span>}
               </Link>
-              <button
-                type="button"
-                className="history-delete"
-                onClick={(e) => handleDelete(entry.id, e)}
-                title="Delete"
-              >
-                ×
-              </button>
+              <div className="history-item-actions">
+                <button
+                  type="button"
+                  className="history-action-btn history-action-duplicate"
+                  onClick={(e) => handleDuplicate(entry, e)}
+                  title="Duplicate settings"
+                  aria-label="Duplicate settings"
+                >
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect
+                      x="5"
+                      y="5"
+                      width="8"
+                      height="8"
+                      rx="1.5"
+                      stroke="currentColor"
+                      strokeWidth="1.25"
+                    />
+                    <path
+                      d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11"
+                      stroke="currentColor"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="history-action-btn history-action-delete"
+                  onClick={(e) => handleDelete(entry.id, e)}
+                  title="Delete"
+                  aria-label="Delete"
+                >
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path
+                      d="M3.5 5h9M6 5V3.5h4V5M6.5 8v3M9.5 8v3M4.5 5l.4 7.2a1 1 0 0 0 1 .8h4.2a1 1 0 0 0 1-.8L11.5 5"
+                      stroke="currentColor"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
             </li>
           ))}
         </ul>

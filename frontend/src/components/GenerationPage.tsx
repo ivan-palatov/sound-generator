@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { generateMusic } from "../api/client.ts";
-import { defaultForm, entryToForm } from "../lib/generation.ts";
+import { defaultForm, entryToForm, type GenerationPrefill } from "../lib/generation.ts";
 import type { GenerateRequest, HistoryEntry, MusicModel } from "../types.ts";
 import { GenerationResult } from "./GenerationResult.tsx";
 import { ModelSelector } from "./ModelSelector.tsx";
@@ -9,10 +9,11 @@ import { PromptForm } from "./PromptForm.tsx";
 interface GenerationPageProps {
   mode: "new" | "entry";
   initialEntry?: HistoryEntry;
+  prefill?: GenerationPrefill;
   onGenerated?: (entry: HistoryEntry) => void | Promise<void>;
 }
 
-export function GenerationPage({ mode, initialEntry, onGenerated }: GenerationPageProps) {
+export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: GenerationPageProps) {
   const [model, setModel] = useState<MusicModel>(initialEntry?.model ?? "music-2.6");
   const [form, setForm] = useState<Omit<GenerateRequest, "model">>(
     mode === "entry" && initialEntry ? entryToForm(initialEntry) : defaultForm,
@@ -25,8 +26,13 @@ export function GenerationPage({ mode, initialEntry, onGenerated }: GenerationPa
 
   useEffect(() => {
     if (mode === "new") {
-      setModel("music-2.6");
-      setForm(defaultForm);
+      if (prefill) {
+        setModel(prefill.model);
+        setForm(prefill.form);
+      } else {
+        setModel("music-2.6");
+        setForm(defaultForm);
+      }
       setCurrent(null);
       setError(null);
       return;
@@ -40,7 +46,7 @@ export function GenerationPage({ mode, initialEntry, onGenerated }: GenerationPa
         initialEntry.status === "failed" ? (initialEntry.error ?? "Generation failed") : null,
       );
     }
-  }, [mode, initialEntry]);
+  }, [mode, initialEntry, prefill]);
 
   const handleGenerate = async () => {
     setLoading(true);

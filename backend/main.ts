@@ -39,6 +39,7 @@ async function handleGenerate(req: Request): Promise<Response> {
     lyrics: body.lyrics,
     isInstrumental: body.isInstrumental ?? false,
     lyricsOptimizer: body.lyricsOptimizer ?? false,
+    referenceAudioUrl: body.audioUrl,
     status: "failed",
   };
 
