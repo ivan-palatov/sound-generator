@@ -17,7 +17,7 @@ jobs:
             file: frontend/Dockerfile
           - name: backend
             context: backend
-            file: Dockerfile
+            file: backend/Dockerfile
 
     steps:
       - name: Checkout
