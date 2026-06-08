@@ -79,7 +79,6 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
     <main className="main-panel">
       <ModelSelector value={model} onChange={setModel} disabled={loading} />
       <PromptForm
-        model={model}
         values={form}
         onChange={setForm}
         onSubmit={handleGenerate}

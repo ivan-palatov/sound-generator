@@ -1,4 +1,5 @@
 import { createRouter } from "@tanstack/react-router";
+import type { CoverPrefill } from "./lib/cover.ts";
 import type { GenerationPrefill } from "./lib/generation.ts";
 import { routeTree } from "./routeTree.gen";
 
@@ -10,6 +11,6 @@ declare module "@tanstack/react-router" {
   }
 
   interface HistoryState {
-    duplicate?: GenerationPrefill;
+    duplicate?: GenerationPrefill | CoverPrefill;
   }
 }

@@ -4,6 +4,8 @@ export type MusicModel =
   | "music-cover"
   | "music-cover-free";
 
+export type CoverModel = "music-cover" | "music-cover-free";
+
 export type HistoryStatus = "completed" | "failed";
 
 export interface GenerateRequest {
@@ -12,7 +14,29 @@ export interface GenerateRequest {
   lyrics?: string;
   isInstrumental: boolean;
   lyricsOptimizer: boolean;
+}
+
+export interface CoverPreprocessRequest {
+  model: CoverModel;
   audioUrl?: string;
+  audioBase64?: string;
+}
+
+export interface CoverPreprocessResponse {
+  coverFeatureId: string;
+  formattedLyrics: string;
+  audioDuration?: number;
+  structureResult?: string;
+  traceId?: string;
+}
+
+export interface CoverGenerateRequest {
+  model: CoverModel;
+  prompt: string;
+  audioUrl?: string;
+  audioBase64?: string;
+  coverFeatureId?: string;
+  lyrics?: string;
 }
 
 export interface HistoryEntry {
@@ -48,3 +72,18 @@ export interface MiniMaxMusicResponse {
     status_msg: string;
   };
 }
+
+export interface MiniMaxCoverPreprocessResponse {
+  cover_feature_id?: string;
+  formatted_lyrics?: string;
+  structure_result?: string;
+  audio_duration?: number;
+  trace_id?: string;
+  base_resp?: {
+    status_code: number;
+    status_msg: string;
+  };
+}
+
+export const COVER_MODELS = new Set<MusicModel>(["music-cover", "music-cover-free"]);
+export const SONG_MODELS = new Set<MusicModel>(["music-2.6", "music-2.6-free"]);

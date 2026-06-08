@@ -1,4 +1,9 @@
 import {
+  parseCoverGenerateRequest,
+  parseCoverPreprocessRequest,
+  referenceAudioLabel,
+} from "./cover-parse.ts";
+import {
   appendHistory,
   deleteHistory,
   getHistory,
@@ -8,10 +13,12 @@ import {
 import {
   deriveTitleFallback,
   fallbackStyleTags,
+  generateCoverMetadata,
   generateSongMetadata,
 } from "./minimax-metadata.ts";
-import { generateMusic } from "./minimax.ts";
-import type { GenerateRequest, HistoryEntry } from "./types.ts";
+import { generateCover, generateMusic, preprocessCover } from "./minimax.ts";
+import { COVER_MODELS } from "./types.ts";
+import type { CoverGenerateRequest, GenerateRequest, HistoryEntry } from "./types.ts";
 
 const PORT = Number(Deno.env.get("PORT") ?? 8000);
 const CORS_ORIGIN = Deno.env.get("CORS_ORIGIN") ?? "http://localhost:5173";
@@ -42,6 +49,10 @@ async function handleGenerate(req: Request): Promise<Response> {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
+  if (COVER_MODELS.has(body.model)) {
+    return jsonResponse({ error: "Cover models must use /api/cover/generate" }, 400);
+  }
+
   const entry: HistoryEntry = {
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
@@ -50,7 +61,6 @@ async function handleGenerate(req: Request): Promise<Response> {
     lyrics: body.lyrics,
     isInstrumental: body.isInstrumental ?? false,
     lyricsOptimizer: body.lyricsOptimizer ?? false,
-    referenceAudioUrl: body.audioUrl,
     status: "failed",
   };
 
@@ -67,6 +77,80 @@ async function handleGenerate(req: Request): Promise<Response> {
       entry.styleTags = metadata.styleTags;
     } else {
       entry.title = deriveTitleFallback(body);
+      entry.styleTags = fallbackStyleTags(body.prompt ?? "");
+    }
+  } catch (err) {
+    const error = err as Error & { traceId?: string };
+    entry.error = error.message;
+    entry.traceId = error.traceId;
+    await appendHistory(entry);
+    return jsonResponse({ entry, error: error.message }, 422);
+  }
+
+  await appendHistory(entry);
+  return jsonResponse({ entry });
+}
+
+async function handleCoverPreprocess(req: Request): Promise<Response> {
+  try {
+    const body = await parseCoverPreprocessRequest(req);
+    const result = await preprocessCover(body);
+    return jsonResponse(result);
+  } catch (err) {
+    const error = err as Error & { traceId?: string };
+    return jsonResponse(
+      { error: error.message, traceId: error.traceId },
+      error.message.includes("required") || error.message.includes("Provide") ? 400 : 422,
+    );
+  }
+}
+
+function coverEntryFromRequest(body: CoverGenerateRequest): HistoryEntry {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    model: body.model,
+    prompt: body.prompt ?? "",
+    lyrics: body.lyrics,
+    isInstrumental: false,
+    lyricsOptimizer: false,
+    referenceAudioUrl: referenceAudioLabel(body),
+    status: "failed",
+  };
+}
+
+async function handleCoverGenerate(req: Request): Promise<Response> {
+  let body: CoverGenerateRequest;
+  try {
+    body = await parseCoverGenerateRequest(req);
+  } catch (err) {
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : "Invalid request body" },
+      400,
+    );
+  }
+
+  const entry = coverEntryFromRequest(body);
+
+  try {
+    const result = await generateCover(body);
+    entry.status = "completed";
+    entry.audioUrl = result.audioUrl;
+    entry.traceId = result.traceId;
+    entry.durationMs = result.durationMs;
+
+    const metadata = await generateCoverMetadata(body);
+    if (metadata) {
+      entry.title = metadata.title;
+      entry.styleTags = metadata.styleTags;
+    } else {
+      entry.title = deriveTitleFallback({
+        model: body.model,
+        prompt: body.prompt,
+        lyrics: body.lyrics,
+        isInstrumental: false,
+        lyricsOptimizer: false,
+      });
       entry.styleTags = fallbackStyleTags(body.prompt ?? "");
     }
   } catch (err) {
@@ -157,6 +241,14 @@ Deno.serve({ port: PORT }, async (req) => {
 
   if (url.pathname === "/api/generate" && req.method === "POST") {
     return handleGenerate(req);
+  }
+
+  if (url.pathname === "/api/cover/preprocess" && req.method === "POST") {
+    return handleCoverPreprocess(req);
+  }
+
+  if (url.pathname === "/api/cover/generate" && req.method === "POST") {
+    return handleCoverGenerate(req);
   }
 
   const historyIdMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);

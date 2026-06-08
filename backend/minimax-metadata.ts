@@ -1,4 +1,5 @@
-import type { GenerateRequest } from "./types.ts";
+import type { CoverGenerateRequest, GenerateRequest } from "./types.ts";
+import { COVER_MODELS } from "./types.ts";
 
 const CHAT_URL = "https://api.minimax.io/v1/chat/completions";
 const MODEL = "MiniMax-M3";
@@ -28,6 +29,18 @@ interface ChatCompletionResponse {
 function buildUserMessage(req: GenerateRequest): string {
   const parts = [`Style prompt: ${req.prompt || "(none)"}`];
 
+  if (COVER_MODELS.has(req.model)) {
+    parts.push("This is a music cover (restyled rendition of a reference track).");
+    if (req.lyrics?.trim()) {
+      const lyrics = req.lyrics.trim();
+      const excerpt = lyrics.length > 1200 ? `${lyrics.slice(0, 1200)}…` : lyrics;
+      parts.push(`Cover lyrics:\n${excerpt}`);
+    } else {
+      parts.push("Lyrics were auto-extracted from the reference audio.");
+    }
+    return parts.join("\n\n");
+  }
+
   if (req.isInstrumental) {
     parts.push("This is an instrumental track (no vocals).");
   } else if (req.lyrics?.trim()) {
@@ -36,6 +49,27 @@ function buildUserMessage(req: GenerateRequest): string {
     parts.push(`Lyrics:\n${excerpt}`);
   } else if (req.lyricsOptimizer) {
     parts.push("Lyrics were auto-generated from the style prompt.");
+  }
+
+  return parts.join("\n\n");
+}
+
+function buildCoverUserMessage(req: CoverGenerateRequest): string {
+  const parts = [
+    `Cover style prompt: ${req.prompt || "(none)"}`,
+    "This is a music cover (restyled rendition of a reference track).",
+  ];
+
+  if (req.lyrics?.trim()) {
+    const lyrics = req.lyrics.trim();
+    const excerpt = lyrics.length > 1200 ? `${lyrics.slice(0, 1200)}…` : lyrics;
+    parts.push(`Cover lyrics:\n${excerpt}`);
+  } else {
+    parts.push("Lyrics were auto-extracted from the reference audio.");
+  }
+
+  if (req.coverFeatureId) {
+    parts.push("User edited the extracted lyrics before generating.");
   }
 
   return parts.join("\n\n");
@@ -137,9 +171,7 @@ function isApiSuccess(response: Response, result: ChatCompletionResponse): boole
   return true;
 }
 
-export async function generateSongMetadata(
-  req: GenerateRequest,
-): Promise<SongMetadata | null> {
+async function fetchMetadata(userContent: string, prompt: string): Promise<SongMetadata | null> {
   const apiKey = Deno.env.get("MINIMAX_API_KEY");
   if (!apiKey) {
     console.warn("MINIMAX_API_KEY not configured; skipping metadata generation");
@@ -170,7 +202,7 @@ Rules:
           },
           {
             role: "user",
-            content: buildUserMessage(req),
+            content: userContent,
           },
         ],
       }),
@@ -199,7 +231,7 @@ Rules:
       return null;
     }
 
-    const metadata = parseMetadataContent(rawContent, req.prompt);
+    const metadata = parseMetadataContent(rawContent, prompt);
     if (!metadata) {
       console.warn(
         "Failed to parse metadata JSON:",
@@ -212,4 +244,16 @@ Rules:
     console.warn("Metadata generation error:", err);
     return null;
   }
+}
+
+export async function generateSongMetadata(
+  req: GenerateRequest,
+): Promise<SongMetadata | null> {
+  return fetchMetadata(buildUserMessage(req), req.prompt ?? "");
+}
+
+export async function generateCoverMetadata(
+  req: CoverGenerateRequest,
+): Promise<SongMetadata | null> {
+  return fetchMetadata(buildCoverUserMessage(req), req.prompt ?? "");
 }

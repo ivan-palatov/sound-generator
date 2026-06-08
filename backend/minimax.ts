@@ -1,6 +1,15 @@
-import type { GenerateRequest, MiniMaxMusicResponse } from "./types.ts";
+import type {
+  CoverGenerateRequest,
+  CoverPreprocessRequest,
+  CoverPreprocessResponse,
+  GenerateRequest,
+  MiniMaxCoverPreprocessResponse,
+  MiniMaxMusicResponse,
+} from "./types.ts";
+import { COVER_MODELS, SONG_MODELS } from "./types.ts";
 
-const MINIMAX_URL = "https://api.minimax.io/v1/music_generation";
+const MINIMAX_MUSIC_URL = "https://api.minimax.io/v1/music_generation";
+const MINIMAX_COVER_PREPROCESS_URL = "https://api.minimax.io/v1/music_cover_preprocess";
 
 const ERROR_MESSAGES: Record<number, string> = {
   1002: "Rate limit triggered — please retry later",
@@ -11,23 +20,32 @@ const ERROR_MESSAGES: Record<number, string> = {
   2049: "Invalid API key",
 };
 
-const COVER_MODELS = new Set(["music-cover", "music-cover-free"]);
-const MUSIC_MODELS = new Set(["music-2.6", "music-2.6-free"]);
+const AUDIO_SETTING = {
+  sample_rate: 44100,
+  bitrate: 256000,
+  format: "mp3",
+};
 
-export function validateRequest(req: GenerateRequest): string | null {
+function getApiKey(): string {
+  const apiKey = Deno.env.get("MINIMAX_API_KEY");
+  if (!apiKey) {
+    throw new Error("MINIMAX_API_KEY is not configured");
+  }
+  return apiKey;
+}
+
+export function mapMiniMaxError(statusCode: number, statusMsg: string): string {
+  return ERROR_MESSAGES[statusCode] ?? statusMsg ?? "Unknown error";
+}
+
+export function validateSongRequest(req: GenerateRequest): string | null {
   if (!req.model) return "Model is required";
 
   if (COVER_MODELS.has(req.model)) {
-    if (!req.audioUrl?.trim()) {
-      return "Reference audio URL is required for cover models";
-    }
-    if (!req.prompt?.trim() || req.prompt.length < 10 || req.prompt.length > 300) {
-      return "Style prompt must be 10–300 characters for cover models";
-    }
-    return null;
+    return "Cover models must use /api/cover/generate";
   }
 
-  if (!MUSIC_MODELS.has(req.model)) {
+  if (!SONG_MODELS.has(req.model)) {
     return "Unsupported model";
   }
 
@@ -55,19 +73,59 @@ export function validateRequest(req: GenerateRequest): string | null {
   return null;
 }
 
-export function mapMiniMaxError(statusCode: number, statusMsg: string): string {
-  return ERROR_MESSAGES[statusCode] ?? statusMsg ?? "Unknown error";
+export function validateCoverPreprocess(req: CoverPreprocessRequest): string | null {
+  if (!req.model) return "Model is required";
+  if (!COVER_MODELS.has(req.model)) return "Unsupported cover model";
+
+  const hasUrl = Boolean(req.audioUrl?.trim());
+  const hasBase64 = Boolean(req.audioBase64?.trim());
+
+  if (!hasUrl && !hasBase64) {
+    return "Reference audio URL or file is required";
+  }
+  if (hasUrl && hasBase64) {
+    return "Provide either reference audio URL or file, not both";
+  }
+
+  return null;
+}
+
+export function validateCoverRequest(req: CoverGenerateRequest): string | null {
+  if (!req.model) return "Model is required";
+  if (!COVER_MODELS.has(req.model)) return "Unsupported cover model";
+
+  if (!req.prompt?.trim() || req.prompt.length < 10 || req.prompt.length > 300) {
+    return "Style prompt must be 10–300 characters";
+  }
+
+  const hasFeatureId = Boolean(req.coverFeatureId?.trim());
+  const hasUrl = Boolean(req.audioUrl?.trim());
+  const hasBase64 = Boolean(req.audioBase64?.trim());
+
+  if (hasFeatureId) {
+    if (hasUrl || hasBase64) {
+      return "coverFeatureId cannot be used with reference audio";
+    }
+    if (!req.lyrics?.trim() || req.lyrics.length < 10 || req.lyrics.length > 1000) {
+      return "Lyrics must be 10–1000 characters for advanced cover";
+    }
+    return null;
+  }
+
+  if (!hasUrl && !hasBase64) {
+    return "Reference audio URL or file is required";
+  }
+  if (hasUrl && hasBase64) {
+    return "Provide either reference audio URL or file, not both";
+  }
+
+  return null;
 }
 
 export async function generateMusic(
   req: GenerateRequest,
 ): Promise<{ audioUrl?: string; traceId?: string; durationMs?: number }> {
-  const apiKey = Deno.env.get("MINIMAX_API_KEY");
-  if (!apiKey) {
-    throw new Error("MINIMAX_API_KEY is not configured");
-  }
-
-  const validationError = validateRequest(req);
+  const validationError = validateSongRequest(req);
   if (validationError) {
     throw new Error(validationError);
   }
@@ -75,24 +133,98 @@ export async function generateMusic(
   const payload: Record<string, unknown> = {
     model: req.model,
     output_format: "url",
-    audio_setting: {
-      sample_rate: 44100,
-      bitrate: 256000,
-      format: "mp3",
-    },
+    audio_setting: AUDIO_SETTING,
+    is_instrumental: req.isInstrumental,
+    lyrics_optimizer: req.lyricsOptimizer,
   };
 
   if (req.prompt?.trim()) payload.prompt = req.prompt.trim();
   if (req.lyrics?.trim()) payload.lyrics = req.lyrics.trim();
-  if (MUSIC_MODELS.has(req.model)) {
-    payload.is_instrumental = req.isInstrumental;
-    payload.lyrics_optimizer = req.lyricsOptimizer;
-  }
-  if (COVER_MODELS.has(req.model) && req.audioUrl?.trim()) {
-    payload.audio_url = req.audioUrl.trim();
+
+  return callMusicGeneration(payload);
+}
+
+export async function preprocessCover(
+  req: CoverPreprocessRequest,
+): Promise<CoverPreprocessResponse> {
+  const validationError = validateCoverPreprocess(req);
+  if (validationError) {
+    throw new Error(validationError);
   }
 
-  const response = await fetch(MINIMAX_URL, {
+  const payload: Record<string, unknown> = { model: req.model };
+  if (req.audioUrl?.trim()) payload.audio_url = req.audioUrl.trim();
+  if (req.audioBase64?.trim()) payload.audio_base64 = req.audioBase64.trim();
+
+  const apiKey = getApiKey();
+  const response = await fetch(MINIMAX_COVER_PREPROCESS_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const result = (await response.json()) as MiniMaxCoverPreprocessResponse;
+  const statusCode = result.base_resp?.status_code ?? -1;
+
+  if (!response.ok || statusCode !== 0) {
+    const message = mapMiniMaxError(
+      statusCode,
+      result.base_resp?.status_msg ?? "Request failed",
+    );
+    const error = new Error(message) as Error & { traceId?: string };
+    error.traceId = result.trace_id;
+    throw error;
+  }
+
+  if (!result.cover_feature_id || !result.formatted_lyrics) {
+    throw new Error("No cover feature data returned from MiniMax");
+  }
+
+  return {
+    coverFeatureId: result.cover_feature_id,
+    formattedLyrics: result.formatted_lyrics,
+    audioDuration: result.audio_duration,
+    structureResult: result.structure_result,
+    traceId: result.trace_id,
+  };
+}
+
+export async function generateCover(
+  req: CoverGenerateRequest,
+): Promise<{ audioUrl?: string; traceId?: string; durationMs?: number }> {
+  const validationError = validateCoverRequest(req);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const payload: Record<string, unknown> = {
+    model: req.model,
+    output_format: "url",
+    audio_setting: AUDIO_SETTING,
+    prompt: req.prompt.trim(),
+  };
+
+  if (req.coverFeatureId?.trim()) {
+    payload.cover_feature_id = req.coverFeatureId.trim();
+    payload.lyrics = req.lyrics!.trim();
+  } else if (req.audioUrl?.trim()) {
+    payload.audio_url = req.audioUrl.trim();
+  } else if (req.audioBase64?.trim()) {
+    payload.audio_base64 = req.audioBase64.trim();
+  }
+
+  return callMusicGeneration(payload);
+}
+
+async function callMusicGeneration(
+  payload: Record<string, unknown>,
+): Promise<{ audioUrl?: string; traceId?: string; durationMs?: number }> {
+  const apiKey = getApiKey();
+
+  const response = await fetch(MINIMAX_MUSIC_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

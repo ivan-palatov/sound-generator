@@ -36,6 +36,45 @@ body {
   border-bottom: 1px solid #2a2a36;
 }
 
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mode-tab {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8888a0;
+  background: transparent;
+  border: 1px solid #2a2a36;
+  border-radius: 6px;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.mode-tab:hover {
+  color: #e8e8ec;
+  border-color: #3a3a4a;
+}
+
+.mode-tab.active {
+  color: #e8e8ec;
+  background: rgba(91, 110, 245, 0.12);
+  border-color: rgba(91, 110, 245, 0.45);
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 1.5rem;
@@ -81,6 +120,11 @@ body {
   color: #8888a0;
 }
 
+.history-new-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
 .history-new-btn {
   padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
@@ -90,6 +134,7 @@ body {
   border: 1px solid rgba(91, 110, 245, 0.35);
   border-radius: 4px;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .history-new-btn:hover {
@@ -496,4 +541,105 @@ body {
 
 .not-found-link:hover {
   text-decoration: underline;
+}
+
+.workflow-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.workflow-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8888a0;
+  background: #12121a;
+  border: 1px solid #2a2a36;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.workflow-btn:hover:not(:disabled) {
+  color: #e8e8ec;
+  border-color: #3a3a4a;
+}
+
+.workflow-btn.active {
+  color: #e8e8ec;
+  background: rgba(91, 110, 245, 0.12);
+  border-color: rgba(91, 110, 245, 0.45);
+}
+
+.workflow-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cover-advanced-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: #666680;
+}
+
+.field-hint.file-name {
+  color: #a0a0b8;
+}
+
+.field-divider {
+  display: block;
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+  color: #666680;
+  text-align: center;
+}
+
+.file-input {
+  width: 100%;
+  font-size: 0.875rem;
+  color: #e8e8ec;
+}
+
+.file-input::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: #e8e8ec;
+  background: #2a2a36;
+  border: 1px solid #3a3a4a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  align-self: flex-start;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e8e8ec;
+  background: #2a2a36;
+  border: 1px solid #3a3a4a;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #3a3a4a;
+}
+
+.secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

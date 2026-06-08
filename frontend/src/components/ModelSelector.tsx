@@ -1,4 +1,4 @@
-import { MUSIC_MODELS, type MusicModel } from "../types.ts";
+import { SONG_MODELS, type MusicModel } from "../types.ts";
 
 interface ModelSelectorProps {
   value: MusicModel;
@@ -15,7 +15,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
         onChange={(e) => onChange(e.target.value as MusicModel)}
         disabled={disabled}
       >
-        {MUSIC_MODELS.map((m) => (
+        {SONG_MODELS.map((m) => (
           <option key={m.value} value={m.value}>
             {m.label}
           </option>

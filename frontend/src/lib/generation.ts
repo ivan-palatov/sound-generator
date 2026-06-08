@@ -1,4 +1,5 @@
 import type { GenerateRequest, HistoryEntry, MusicModel } from "../types.ts";
+import { COVER_MODELS } from "../types.ts";
 
 export interface GenerationPrefill {
   model: MusicModel;
@@ -10,7 +11,6 @@ export const defaultForm: Omit<GenerateRequest, "model"> = {
   lyrics: "",
   isInstrumental: false,
   lyricsOptimizer: false,
-  audioUrl: "",
 };
 
 export function entryToForm(entry: HistoryEntry): Omit<GenerateRequest, "model"> {
@@ -19,7 +19,6 @@ export function entryToForm(entry: HistoryEntry): Omit<GenerateRequest, "model">
     lyrics: entry.lyrics ?? "",
     isInstrumental: entry.isInstrumental,
     lyricsOptimizer: entry.lyricsOptimizer,
-    audioUrl: entry.referenceAudioUrl ?? "",
   };
 }
 
@@ -28,4 +27,8 @@ export function entryToPrefill(entry: HistoryEntry): GenerationPrefill {
     model: entry.model,
     form: entryToForm(entry),
   };
+}
+
+export function isCoverEntry(entry: HistoryEntry): boolean {
+  return COVER_MODELS.has(entry.model);
 }

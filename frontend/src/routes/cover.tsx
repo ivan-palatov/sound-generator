@@ -1,19 +1,19 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
-import { GenerationPage } from "../components/GenerationPage.tsx";
+import { CoverPage } from "../components/CoverPage.tsx";
 import { useHistory } from "../context/HistoryContext.tsx";
-import type { GenerationPrefill } from "../lib/generation.ts";
+import type { CoverPrefill } from "../lib/cover.ts";
 import type { HistoryEntry } from "../types.ts";
 
-function IndexPage() {
+function CoverRoutePage() {
   const navigate = useNavigate();
   const { refreshHistory } = useHistory();
   const prefill = useRouterState({
     select: (state) => {
       const duplicate = state.location.state?.duplicate;
-      if (!duplicate || "workflow" in duplicate.form) {
+      if (!duplicate || !("form" in duplicate && "workflow" in duplicate.form)) {
         return undefined;
       }
-      return duplicate as GenerationPrefill;
+      return duplicate as CoverPrefill;
     },
   });
 
@@ -22,9 +22,9 @@ function IndexPage() {
     navigate({ to: "/history/$entryId", params: { entryId: entry.id } });
   };
 
-  return <GenerationPage mode="new" prefill={prefill} onGenerated={handleGenerated} />;
+  return <CoverPage mode="new" prefill={prefill} onGenerated={handleGenerated} />;
 }
 
-export const Route = createFileRoute("/")({
-  component: IndexPage,
+export const Route = createFileRoute("/cover")({
+  component: CoverRoutePage,
 });

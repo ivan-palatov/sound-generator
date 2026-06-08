@@ -6,6 +6,7 @@ interface GenerationResultProps {
   loading: boolean;
   error: string | null;
   onTitleChange?: (title: string) => Promise<void>;
+  emptyMessage?: string;
 }
 
 function displayTitle(entry: HistoryEntry): string {
@@ -17,6 +18,7 @@ export function GenerationResult({
   loading,
   error,
   onTitleChange,
+  emptyMessage = "Generate a track to hear the result here.",
 }: GenerationResultProps) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -43,7 +45,7 @@ export function GenerationResult({
   if (!entry) {
     return (
       <div className="generation-result empty">
-        <p>Generate a track to hear the result here.</p>
+        <p>{emptyMessage}</p>
         <p className="hint">Audio URLs expire after 24 hours.</p>
       </div>
     );

@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { fetchHistoryEntry } from "../api/client.ts";
+import { CoverPage } from "../components/CoverPage.tsx";
 import { GenerationPage } from "../components/GenerationPage.tsx";
 import { useHistory } from "../context/HistoryContext.tsx";
+import { isCoverEntry } from "../lib/generation.ts";
 import type { HistoryEntry } from "../types.ts";
 
 function HistoryEntryPage() {
@@ -26,6 +28,10 @@ function HistoryEntryPage() {
     await refreshHistory();
     navigate({ to: "/history/$entryId", params: { entryId: newEntry.id } });
   };
+
+  if (isCoverEntry(entry)) {
+    return <CoverPage mode="entry" initialEntry={entry} onGenerated={handleGenerated} />;
+  }
 
   return <GenerationPage mode="entry" initialEntry={entry} onGenerated={handleGenerated} />;
 }

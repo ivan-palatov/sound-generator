@@ -2,7 +2,8 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { deleteHistoryEntry, updateHistoryEntry } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
-import { entryToPrefill } from "../lib/generation.ts";
+import { entryToCoverPrefill } from "../lib/cover.ts";
+import { entryToPrefill, isCoverEntry } from "../lib/generation.ts";
 import type { HistoryEntry } from "../types.ts";
 
 function formatDate(iso: string): string {
@@ -31,7 +32,14 @@ export function HistoryPanel() {
   const handleDuplicate = (entry: HistoryEntry, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate({ to: "/", state: { duplicate: entryToPrefill(entry) } });
+    if (isCoverEntry(entry)) {
+      navigate({
+        to: "/cover",
+        state: { duplicate: entryToCoverPrefill(entry) },
+      });
+    } else {
+      navigate({ to: "/", state: { duplicate: entryToPrefill(entry) } });
+    }
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -102,9 +110,14 @@ export function HistoryPanel() {
     <aside className="history-panel">
       <div className="history-panel-header">
         <h2>History</h2>
-        <Link to="/" className="history-new-btn" state={{}}>
-          + New
-        </Link>
+        <div className="history-new-actions">
+          <Link to="/" className="history-new-btn" state={{}}>
+            + Song
+          </Link>
+          <Link to="/cover" className="history-new-btn" state={{}}>
+            + Cover
+          </Link>
+        </div>
       </div>
       {entries.length === 0 ? (
         <p className="history-empty">No generations yet</p>
