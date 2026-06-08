@@ -4,6 +4,7 @@ import type {
   CoverPreprocessResponse,
   GenerateRequest,
   HistoryEntry,
+  TtsGenerateRequest,
 } from "../types.ts";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -144,6 +145,49 @@ export async function generateCover(
 
   if (!response.ok) {
     throw new Error(data.error ?? "Cover generation failed");
+  }
+
+  return { entry: data.entry };
+}
+
+export async function generateTts(
+  body: TtsGenerateRequest,
+): Promise<{ entry: HistoryEntry; error?: string }> {
+  const hasFile = Boolean(body.audioFile);
+
+  const response = await fetch(
+    "/api/tts/generate",
+    hasFile
+      ? {
+          method: "POST",
+          body: buildCoverFormData(
+            {
+              model: body.model,
+              text: body.text,
+              audioUrl: body.audioUrl,
+            },
+            body.audioFile,
+          ),
+        }
+      : {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: body.model,
+            text: body.text,
+            audioUrl: body.audioUrl,
+          }),
+        },
+  );
+
+  const data = await response.json();
+
+  if (response.status === 422) {
+    return { entry: data.entry, error: data.error };
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error ?? "TTS generation failed");
   }
 
   return { entry: data.entry };

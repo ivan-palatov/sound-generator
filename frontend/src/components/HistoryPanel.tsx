@@ -4,6 +4,7 @@ import { deleteHistoryEntry, updateHistoryEntry } from "../api/client.ts";
 import { useHistory } from "../context/HistoryContext.tsx";
 import { entryToCoverPrefill } from "../lib/cover.ts";
 import { entryToPrefill, isCoverEntry } from "../lib/generation.ts";
+import { entryToTtsPrefill, isTtsEntry } from "../lib/tts.ts";
 import type { HistoryEntry } from "../types.ts";
 
 function formatDate(iso: string): string {
@@ -36,6 +37,11 @@ export function HistoryPanel() {
       navigate({
         to: "/cover",
         state: { duplicate: entryToCoverPrefill(entry) },
+      });
+    } else if (isTtsEntry(entry)) {
+      navigate({
+        to: "/tts",
+        state: { duplicate: entryToTtsPrefill(entry) },
       });
     } else {
       navigate({ to: "/", state: { duplicate: entryToPrefill(entry) } });
@@ -116,6 +122,9 @@ export function HistoryPanel() {
           </Link>
           <Link to="/cover" className="history-new-btn" state={{}}>
             + Cover
+          </Link>
+          <Link to="/tts" className="history-new-btn" state={{}}>
+            + TTS
           </Link>
         </div>
       </div>

@@ -3,6 +3,7 @@ import {
   parseCoverPreprocessRequest,
   referenceAudioLabel,
 } from "./cover-parse.ts";
+import { parseTtsGenerateRequest, referenceAudioLabel as ttsReferenceAudioLabel } from "./tts-parse.ts";
 import {
   appendHistory,
   deleteHistory,
@@ -12,13 +13,22 @@ import {
 } from "./history.ts";
 import {
   deriveTitleFallback,
+  deriveTtsTitleFallback,
   fallbackStyleTags,
   generateCoverMetadata,
   generateSongMetadata,
+  generateTtsMetadata,
 } from "./minimax-metadata.ts";
 import { generateCover, generateMusic, preprocessCover } from "./minimax.ts";
-import { COVER_MODELS } from "./types.ts";
-import type { CoverGenerateRequest, GenerateRequest, HistoryEntry } from "./types.ts";
+import { generateTts } from "./minimax-tts.ts";
+import { COVER_MODELS, TTS_MODELS } from "./types.ts";
+import type {
+  CoverGenerateRequest,
+  GenerateRequest,
+  HistoryEntry,
+  TtsGenerateRequest,
+  TtsModel,
+} from "./types.ts";
 
 const PORT = Number(Deno.env.get("PORT") ?? 8000);
 const CORS_ORIGIN = Deno.env.get("CORS_ORIGIN") ?? "http://localhost:5173";
@@ -51,6 +61,10 @@ async function handleGenerate(req: Request): Promise<Response> {
 
   if (COVER_MODELS.has(body.model)) {
     return jsonResponse({ error: "Cover models must use /api/cover/generate" }, 400);
+  }
+
+  if (TTS_MODELS.has(body.model as TtsModel)) {
+    return jsonResponse({ error: "TTS models must use /api/tts/generate" }, 400);
   }
 
   const entry: HistoryEntry = {
@@ -165,6 +179,60 @@ async function handleCoverGenerate(req: Request): Promise<Response> {
   return jsonResponse({ entry });
 }
 
+function ttsEntryFromRequest(body: TtsGenerateRequest): HistoryEntry {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    model: body.model,
+    prompt: body.text ?? "",
+    isInstrumental: false,
+    lyricsOptimizer: false,
+    referenceAudioUrl: ttsReferenceAudioLabel(body),
+    status: "failed",
+  };
+}
+
+async function handleTtsGenerate(req: Request): Promise<Response> {
+  let body: TtsGenerateRequest;
+  try {
+    body = await parseTtsGenerateRequest(req);
+  } catch (err) {
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : "Invalid request body" },
+      400,
+    );
+  }
+
+  const entry = ttsEntryFromRequest(body);
+
+  try {
+    const result = await generateTts(body);
+    entry.status = "completed";
+    entry.audioUrl = result.audioUrl;
+    entry.traceId = result.traceId;
+    entry.durationMs = result.durationMs;
+    entry.voiceId = result.voiceId;
+
+    const metadata = await generateTtsMetadata(body.text);
+    if (metadata) {
+      entry.title = metadata.title;
+      entry.styleTags = metadata.styleTags;
+    } else {
+      entry.title = deriveTtsTitleFallback(body.text);
+      entry.styleTags = ["Speech", "TTS"];
+    }
+  } catch (err) {
+    const error = err as Error & { traceId?: string };
+    entry.error = error.message;
+    entry.traceId = error.traceId;
+    await appendHistory(entry);
+    return jsonResponse({ entry, error: error.message }, 422);
+  }
+
+  await appendHistory(entry);
+  return jsonResponse({ entry });
+}
+
 async function handleDelete(id: string): Promise<Response> {
   const deleted = await deleteHistory(id);
   if (!deleted) {
@@ -249,6 +317,10 @@ Deno.serve({ port: PORT }, async (req) => {
 
   if (url.pathname === "/api/cover/generate" && req.method === "POST") {
     return handleCoverGenerate(req);
+  }
+
+  if (url.pathname === "/api/tts/generate" && req.method === "POST") {
+    return handleTtsGenerate(req);
   }
 
   const historyIdMatch = url.pathname.match(/^\/api\/history\/([^/]+)$/);

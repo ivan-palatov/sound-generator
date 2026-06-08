@@ -3,3 +3,4 @@ dist/
 .env
 backend/data/history.json
 pnpm-debug.log*
+tmp/

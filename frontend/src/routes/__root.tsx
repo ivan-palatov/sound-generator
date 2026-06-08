@@ -8,6 +8,7 @@ import "../App.css";
 function RootLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isCover = pathname.startsWith("/cover");
+  const isTts = pathname.startsWith("/tts");
 
   return (
     <ThemeProvider>
@@ -17,15 +18,21 @@ function RootLayout() {
             <div className="app-header-top">
               <div>
                 <h1>Sound Generator</h1>
-                <p className="subtitle">MiniMax Music Generation</p>
+                <p className="subtitle">MiniMax Music & Speech Generation</p>
               </div>
               <div className="app-header-actions">
                 <nav className="mode-tabs" aria-label="Generation mode">
-                  <Link to="/" className={`mode-tab ${!isCover ? "active" : ""}`}>
+                  <Link
+                    to="/"
+                    className={`mode-tab ${!isCover && !isTts ? "active" : ""}`}
+                  >
                     New Song
                   </Link>
                   <Link to="/cover" className={`mode-tab ${isCover ? "active" : ""}`}>
                     New Cover
+                  </Link>
+                  <Link to="/tts" className={`mode-tab ${isTts ? "active" : ""}`}>
+                    Text to Speech
                   </Link>
                 </nav>
                 <ThemeToggle />

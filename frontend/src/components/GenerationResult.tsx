@@ -7,6 +7,7 @@ interface GenerationResultProps {
   error: string | null;
   onTitleChange?: (title: string) => Promise<void>;
   emptyMessage?: string;
+  loadingMessage?: string;
 }
 
 function displayTitle(entry: HistoryEntry): string {
@@ -19,6 +20,7 @@ export function GenerationResult({
   error,
   onTitleChange,
   emptyMessage = "Generate a track to hear the result here.",
+  loadingMessage = "Generating music — this may take a few minutes…",
 }: GenerationResultProps) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
@@ -28,7 +30,7 @@ export function GenerationResult({
     return (
       <div className="generation-result">
         <div className="spinner" />
-        <p>Generating music — this may take a few minutes…</p>
+        <p>{loadingMessage}</p>
       </div>
     );
   }

@@ -257,3 +257,23 @@ export async function generateCoverMetadata(
 ): Promise<SongMetadata | null> {
   return fetchMetadata(buildCoverUserMessage(req), req.prompt ?? "");
 }
+
+function buildTtsUserMessage(text: string): string {
+  const excerpt = text.length > 1200 ? `${text.slice(0, 1200)}…` : text;
+  return `Speech text to synthesize:\n${excerpt}\n\nThis is a text-to-speech generation using a cloned voice.`;
+}
+
+export function deriveTtsTitleFallback(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return "Untitled speech";
+  return trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
+}
+
+export async function generateTtsMetadata(text: string): Promise<SongMetadata | null> {
+  const metadata = await fetchMetadata(buildTtsUserMessage(text), text);
+  if (metadata) return metadata;
+  return {
+    title: deriveTtsTitleFallback(text),
+    styleTags: ["Speech", "TTS"],
+  };
+}

@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TtsRouteImport } from './routes/tts'
 import { Route as CoverRouteImport } from './routes/cover'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HistoryEntryIdRouteImport } from './routes/history.$entryId'
 
+const TtsRoute = TtsRouteImport.update({
+  id: '/tts',
+  path: '/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CoverRoute = CoverRouteImport.update({
   id: '/cover',
   path: '/cover',
@@ -32,35 +38,46 @@ const HistoryEntryIdRoute = HistoryEntryIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cover': typeof CoverRoute
+  '/tts': typeof TtsRoute
   '/history/$entryId': typeof HistoryEntryIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cover': typeof CoverRoute
+  '/tts': typeof TtsRoute
   '/history/$entryId': typeof HistoryEntryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cover': typeof CoverRoute
+  '/tts': typeof TtsRoute
   '/history/$entryId': typeof HistoryEntryIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cover' | '/history/$entryId'
+  fullPaths: '/' | '/cover' | '/tts' | '/history/$entryId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cover' | '/history/$entryId'
-  id: '__root__' | '/' | '/cover' | '/history/$entryId'
+  to: '/' | '/cover' | '/tts' | '/history/$entryId'
+  id: '__root__' | '/' | '/cover' | '/tts' | '/history/$entryId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CoverRoute: typeof CoverRoute
+  TtsRoute: typeof TtsRoute
   HistoryEntryIdRoute: typeof HistoryEntryIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tts': {
+      id: '/tts'
+      path: '/tts'
+      fullPath: '/tts'
+      preLoaderRoute: typeof TtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cover': {
       id: '/cover'
       path: '/cover'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CoverRoute: CoverRoute,
+  TtsRoute: TtsRoute,
   HistoryEntryIdRoute: HistoryEntryIdRoute,
 }
 export const routeTree = rootRouteImport

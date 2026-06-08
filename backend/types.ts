@@ -2,9 +2,13 @@ export type MusicModel =
   | "music-2.6"
   | "music-2.6-free"
   | "music-cover"
-  | "music-cover-free";
+  | "music-cover-free"
+  | "speech-2.8-hd"
+  | "speech-2.8-turbo";
 
 export type CoverModel = "music-cover" | "music-cover-free";
+
+export type TtsModel = "speech-2.8-hd" | "speech-2.8-turbo";
 
 export type HistoryStatus = "completed" | "failed";
 
@@ -39,6 +43,13 @@ export interface CoverGenerateRequest {
   lyrics?: string;
 }
 
+export interface TtsGenerateRequest {
+  model: TtsModel;
+  text: string;
+  audioUrl?: string;
+  audioBase64?: string;
+}
+
 export interface HistoryEntry {
   id: string;
   createdAt: string;
@@ -56,6 +67,7 @@ export interface HistoryEntry {
   error?: string;
   traceId?: string;
   durationMs?: number;
+  voiceId?: string;
 }
 
 export interface MiniMaxMusicResponse {
@@ -85,5 +97,28 @@ export interface MiniMaxCoverPreprocessResponse {
   };
 }
 
+export interface MiniMaxFileUploadResponse {
+  file?: {
+    file_id?: number;
+  };
+  base_resp?: {
+    status_code: number;
+    status_msg: string;
+  };
+}
+
+export interface MiniMaxVoiceCloneResponse {
+  demo_audio?: string;
+  trace_id?: string;
+  extra_info?: {
+    audio_length?: number;
+  };
+  base_resp?: {
+    status_code: number;
+    status_msg: string;
+  };
+}
+
 export const COVER_MODELS = new Set<MusicModel>(["music-cover", "music-cover-free"]);
 export const SONG_MODELS = new Set<MusicModel>(["music-2.6", "music-2.6-free"]);
+export const TTS_MODELS = new Set<TtsModel>(["speech-2.8-hd", "speech-2.8-turbo"]);

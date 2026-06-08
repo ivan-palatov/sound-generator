@@ -2,8 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { fetchHistoryEntry } from "../api/client.ts";
 import { CoverPage } from "../components/CoverPage.tsx";
 import { GenerationPage } from "../components/GenerationPage.tsx";
+import { TtsPage } from "../components/TtsPage.tsx";
 import { useHistory } from "../context/HistoryContext.tsx";
 import { isCoverEntry } from "../lib/generation.ts";
+import { isTtsEntry } from "../lib/tts.ts";
 import type { HistoryEntry } from "../types.ts";
 
 function HistoryEntryPage() {
@@ -31,6 +33,10 @@ function HistoryEntryPage() {
 
   if (isCoverEntry(entry)) {
     return <CoverPage mode="entry" initialEntry={entry} onGenerated={handleGenerated} />;
+  }
+
+  if (isTtsEntry(entry)) {
+    return <TtsPage mode="entry" initialEntry={entry} onGenerated={handleGenerated} />;
   }
 
   return <GenerationPage mode="entry" initialEntry={entry} onGenerated={handleGenerated} />;

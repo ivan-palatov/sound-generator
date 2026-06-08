@@ -1,6 +1,14 @@
-export type MusicModel = "music-2.6" | "music-2.6-free" | "music-cover" | "music-cover-free";
+export type MusicModel =
+  | "music-2.6"
+  | "music-2.6-free"
+  | "music-cover"
+  | "music-cover-free"
+  | "speech-2.8-hd"
+  | "speech-2.8-turbo";
 
 export type CoverModel = "music-cover" | "music-cover-free";
+
+export type TtsModel = "speech-2.8-hd" | "speech-2.8-turbo";
 
 export type CoverWorkflow = "quick" | "advanced";
 
@@ -31,6 +39,13 @@ export interface CoverGenerateRequest {
   lyrics?: string;
 }
 
+export interface TtsGenerateRequest {
+  model: TtsModel;
+  text: string;
+  audioUrl?: string;
+  audioFile?: File | null;
+}
+
 export interface HistoryEntry {
   id: string;
   createdAt: string;
@@ -48,6 +63,7 @@ export interface HistoryEntry {
   error?: string;
   traceId?: string;
   durationMs?: number;
+  voiceId?: string;
 }
 
 export const SONG_MODELS: { value: MusicModel; label: string }[] = [
@@ -61,3 +77,10 @@ export const COVER_MODEL_OPTIONS: { value: CoverModel; label: string }[] = [
 ];
 
 export const COVER_MODELS = new Set<MusicModel>(["music-cover", "music-cover-free"]);
+
+export const TTS_MODEL_OPTIONS: { value: TtsModel; label: string }[] = [
+  { value: "speech-2.8-hd", label: "Speech 2.8 HD" },
+  { value: "speech-2.8-turbo", label: "Speech 2.8 Turbo" },
+];
+
+export const TTS_MODELS = new Set<TtsModel>(["speech-2.8-hd", "speech-2.8-turbo"]);
