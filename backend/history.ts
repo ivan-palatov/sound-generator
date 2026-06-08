@@ -1,12 +1,29 @@
 import type { HistoryEntry } from "./types.ts";
 
-const HISTORY_PATH = new URL("./data/history.json", import.meta.url);
+function dataDirUrl(): URL {
+  const fromEnv = Deno.env.get("HISTORY_DATA_DIR");
+  if (fromEnv) {
+    const base = fromEnv.endsWith("/") ? fromEnv.slice(0, -1) : fromEnv;
+    return new URL(`file://${base}/`);
+  }
+
+  if (Deno.build.standalone) {
+    const execPath = Deno.execPath();
+    const dir = execPath.slice(0, execPath.lastIndexOf("/") + 1);
+    return new URL("./data/", `file://${dir}`);
+  }
+
+  return new URL("./data/", import.meta.url);
+}
+
+const DATA_DIR = dataDirUrl();
+const HISTORY_PATH = new URL("history.json", DATA_DIR);
 
 async function ensureFile(): Promise<void> {
   try {
     await Deno.stat(HISTORY_PATH);
   } catch {
-    await Deno.mkdir(new URL("./data/", import.meta.url), { recursive: true });
+    await Deno.mkdir(DATA_DIR, { recursive: true });
     await Deno.writeTextFile(HISTORY_PATH, "[]");
   }
 }

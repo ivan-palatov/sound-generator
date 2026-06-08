@@ -59,7 +59,8 @@ export type ApiErrorCode =
   | "INVALID_MUSIC_FORMAT"
   | "INVALID_TTS_SETTINGS"
   | "INVALID_AUDIO_SETTINGS"
-  | "EXTERNAL_SERVICE_ERROR";
+  | "EXTERNAL_SERVICE_ERROR"
+  | "INTERNAL_ERROR";
 
 export type ApiErrorParams = Record<string, string | number>;
 

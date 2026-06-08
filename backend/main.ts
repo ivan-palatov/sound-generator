@@ -357,7 +357,7 @@ async function handlePatch(id: string, req: Request): Promise<Response> {
   return jsonResponse({ entry });
 }
 
-Deno.serve({ port: PORT }, async (req) => {
+async function route(req: Request): Promise<Response> {
   const url = new URL(req.url);
 
   if (req.method === "OPTIONS") {
@@ -408,6 +408,15 @@ Deno.serve({ port: PORT }, async (req) => {
   }
 
   return jsonResponse({ errorCode: "NOT_FOUND" }, 404);
+}
+
+Deno.serve({ port: PORT }, async (req) => {
+  try {
+    return await route(req);
+  } catch (err) {
+    console.error(err);
+    return jsonResponse({ errorCode: "INTERNAL_ERROR" }, 500);
+  }
 });
 
 console.log(`Backend listening on http://localhost:${PORT}`);
