@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { translateEntryError } from "../lib/translateError.ts";
 import type { HistoryEntry } from "../types.ts";
+import { AudioPlayer } from "./AudioPlayer.tsx";
 
 interface GenerationResultProps {
   entry: HistoryEntry | null;
@@ -161,7 +162,9 @@ export function GenerationResult({
           ))}
         </div>
       )}
-      <audio controls src={entry.audioUrl} className="audio-player" />
+      {entry.audioUrl && (
+        <AudioPlayer src={entry.audioUrl} durationMs={entry.durationMs} />
+      )}
       {entry.durationMs != null && (
         <p className="meta">
           {t("common.duration", { seconds: (entry.durationMs / 1000).toFixed(1) })}

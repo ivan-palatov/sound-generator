@@ -104,6 +104,14 @@
       "voiceRequired": "Voice sample file or URL is required"
     }
   },
+  "player": {
+    "play": "Play",
+    "pause": "Pause",
+    "seek": "Seek",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute"
+  },
   "result": {
     "emptySong": "Generate a track to hear the result here.",
     "emptyCover": "Generate a cover to hear the result here.",

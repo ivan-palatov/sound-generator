@@ -17,6 +17,7 @@ function RootLayout() {
     <ThemeProvider>
       <HistoryProvider>
         <div className="app">
+          <div className="app-bg" aria-hidden="true" />
           <header className="app-header">
             <div className="app-header-top">
               <div>
