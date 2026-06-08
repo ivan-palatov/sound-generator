@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { generateMusic } from "../api/client.ts";
+import { generateMusic, updateHistoryEntry } from "../api/client.ts";
+import { useHistory } from "../context/HistoryContext.tsx";
 import { defaultForm, entryToForm, type GenerationPrefill } from "../lib/generation.ts";
 import type { GenerateRequest, HistoryEntry, MusicModel } from "../types.ts";
 import { GenerationResult } from "./GenerationResult.tsx";
@@ -14,6 +15,7 @@ interface GenerationPageProps {
 }
 
 export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: GenerationPageProps) {
+  const { refreshHistory } = useHistory();
   const [model, setModel] = useState<MusicModel>(initialEntry?.model ?? "music-2.6");
   const [form, setForm] = useState<Omit<GenerateRequest, "model">>(
     mode === "entry" && initialEntry ? entryToForm(initialEntry) : defaultForm,
@@ -48,6 +50,13 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
     }
   }, [mode, initialEntry, prefill]);
 
+  const handleTitleChange = async (title: string) => {
+    if (!current) return;
+    const updated = await updateHistoryEntry(current.id, { title });
+    setCurrent(updated);
+    await refreshHistory();
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
@@ -76,7 +85,12 @@ export function GenerationPage({ mode, initialEntry, prefill, onGenerated }: Gen
         onSubmit={handleGenerate}
         loading={loading}
       />
-      <GenerationResult entry={current} loading={loading} error={error} />
+      <GenerationResult
+        entry={current}
+        loading={loading}
+        error={error}
+        onTitleChange={mode === "entry" && current ? handleTitleChange : undefined}
+      />
     </main>
   );
 }

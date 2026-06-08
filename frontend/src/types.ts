@@ -23,6 +23,7 @@ export interface HistoryEntry {
   audioUrl?: string;
   title?: string;
   styleTags?: string[];
+  pinned?: boolean;
   status: HistoryStatus;
   error?: string;
   traceId?: string;

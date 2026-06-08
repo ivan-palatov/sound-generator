@@ -29,9 +29,31 @@ export async function getHistory(id: string): Promise<HistoryEntry | null> {
 
 export async function listHistory(): Promise<HistoryEntry[]> {
   const entries = await readAll();
-  return entries.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  return entries.sort((a, b) => {
+    const aPinned = a.pinned ?? false;
+    const bPinned = b.pinned ?? false;
+    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
+export type HistoryUpdate = Pick<HistoryEntry, "title" | "pinned">;
+
+export async function updateHistory(
+  id: string,
+  patch: Partial<HistoryUpdate>,
+): Promise<HistoryEntry | null> {
+  const entries = await readAll();
+  const index = entries.findIndex((e) => e.id === id);
+  if (index === -1) return null;
+
+  const entry = { ...entries[index] };
+  if (patch.title !== undefined) entry.title = patch.title;
+  if (patch.pinned !== undefined) entry.pinned = patch.pinned;
+
+  entries[index] = entry;
+  await writeAll(entries);
+  return entry;
 }
 
 export async function appendHistory(entry: HistoryEntry): Promise<HistoryEntry> {

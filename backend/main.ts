@@ -1,4 +1,10 @@
-import { appendHistory, deleteHistory, getHistory, listHistory } from "./history.ts";
+import {
+  appendHistory,
+  deleteHistory,
+  getHistory,
+  listHistory,
+  updateHistory,
+} from "./history.ts";
 import {
   deriveTitleFallback,
   fallbackStyleTags,
@@ -13,7 +19,7 @@ const CORS_ORIGIN = Deno.env.get("CORS_ORIGIN") ?? "http://localhost:5173";
 function corsHeaders(): HeadersInit {
   return {
     "Access-Control-Allow-Origin": CORS_ORIGIN,
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
@@ -83,6 +89,56 @@ async function handleDelete(id: string): Promise<Response> {
   return jsonResponse({ ok: true });
 }
 
+const MAX_TITLE_LENGTH = 200;
+
+async function handlePatch(id: string, req: Request): Promise<Response> {
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
+  }
+
+  const allowedKeys = new Set(["title", "pinned"]);
+  const unknownKeys = Object.keys(body).filter((k) => !allowedKeys.has(k));
+  if (unknownKeys.length > 0) {
+    return jsonResponse({ error: `Unknown fields: ${unknownKeys.join(", ")}` }, 400);
+  }
+
+  const patch: { title?: string; pinned?: boolean } = {};
+
+  if ("title" in body) {
+    if (typeof body.title !== "string") {
+      return jsonResponse({ error: "title must be a string" }, 400);
+    }
+    const title = body.title.trim();
+    if (!title) {
+      return jsonResponse({ error: "title cannot be empty" }, 400);
+    }
+    if (title.length > MAX_TITLE_LENGTH) {
+      return jsonResponse({ error: `title must be at most ${MAX_TITLE_LENGTH} characters` }, 400);
+    }
+    patch.title = title;
+  }
+
+  if ("pinned" in body) {
+    if (typeof body.pinned !== "boolean") {
+      return jsonResponse({ error: "pinned must be a boolean" }, 400);
+    }
+    patch.pinned = body.pinned;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return jsonResponse({ error: "No valid fields to update" }, 400);
+  }
+
+  const entry = await updateHistory(id, patch);
+  if (!entry) {
+    return jsonResponse({ error: "Entry not found" }, 404);
+  }
+  return jsonResponse({ entry });
+}
+
 Deno.serve({ port: PORT }, async (req) => {
   const url = new URL(req.url);
 
@@ -112,6 +168,9 @@ Deno.serve({ port: PORT }, async (req) => {
         return jsonResponse({ error: "Entry not found" }, 404);
       }
       return jsonResponse({ entry });
+    }
+    if (req.method === "PATCH") {
+      return handlePatch(id, req);
     }
     if (req.method === "DELETE") {
       return handleDelete(id);

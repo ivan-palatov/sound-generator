@@ -50,3 +50,14 @@ export async function generateMusic(
 export async function deleteHistoryEntry(id: string): Promise<void> {
   await request(`/api/history/${id}`, { method: "DELETE" });
 }
+
+export async function updateHistoryEntry(
+  id: string,
+  patch: { title?: string; pinned?: boolean },
+): Promise<HistoryEntry> {
+  const data = await request<{ entry: HistoryEntry }>(`/api/history/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  return data.entry;
+}
