@@ -110,7 +110,8 @@
     "seek": "Seek",
     "volume": "Volume",
     "mute": "Mute",
-    "unmute": "Unmute"
+    "unmute": "Unmute",
+    "download": "Download"
   },
   "result": {
     "emptySong": "Generate a track to hear the result here.",

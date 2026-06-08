@@ -163,7 +163,11 @@ export function GenerationResult({
         </div>
       )}
       {entry.audioUrl && (
-        <AudioPlayer src={entry.audioUrl} durationMs={entry.durationMs} />
+        <AudioPlayer
+          src={entry.audioUrl}
+          durationMs={entry.durationMs}
+          filename={title}
+        />
       )}
       {entry.durationMs != null && (
         <p className="meta">

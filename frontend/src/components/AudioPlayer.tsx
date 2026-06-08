@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 interface AudioPlayerProps {
   src: string;
   durationMs?: number | null;
+  filename?: string;
 }
 
 function formatTime(seconds: number): string {
@@ -13,7 +14,17 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function AudioPlayer({ src, durationMs }: AudioPlayerProps) {
+function downloadFilename(name: string | undefined, src: string): string {
+  const base = (name?.trim() || "audio")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+  const extMatch = src.match(/\.(mp3|wav|m4a|flac|ogg)(\?|$)/i);
+  const ext = extMatch ? extMatch[1].toLowerCase() : "mp3";
+  return `${base}.${ext}`;
+}
+
+export function AudioPlayer({ src, durationMs, filename }: AudioPlayerProps) {
   const { t } = useTranslation();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -23,6 +34,7 @@ export function AudioPlayer({ src, durationMs }: AudioPlayerProps) {
   );
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -101,6 +113,35 @@ export function AudioPlayer({ src, durationMs }: AudioPlayerProps) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumeLevel = muted ? 0 : volume;
   const volumeProgress = volumeLevel * 100;
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    const name = downloadFilename(filename, src);
+    try {
+      const response = await fetch(src);
+      if (!response.ok) throw new Error("fetch failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      const link = document.createElement("a");
+      link.href = src;
+      link.download = name;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="audio-player">
@@ -218,6 +259,25 @@ export function AudioPlayer({ src, durationMs }: AudioPlayerProps) {
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="audio-player-download"
+        onClick={() => void handleDownload()}
+        disabled={downloading}
+        aria-label={t("player.download")}
+        title={t("player.download")}
+      >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 4v10m0 0 3.5-3.5M12 14l-3.5-3.5M6 18h12"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
     </div>
   );
 }
